@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:classtrack/screens/splash_screen.dart';
+import 'package:classtrack/theme/design_theme.dart';
 
 void main() {
-  runApp(const MainApp());
+  runApp(const ClassTrackApp());
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class ClassTrackApp extends StatelessWidget {
+  const ClassTrackApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
-      ),
+    return MaterialApp(
+      title: 'ClassTrack',
+      theme: ClassTrackTheme.lightTheme,
+      home: const SplashScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
