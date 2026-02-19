@@ -12,7 +12,7 @@ class ClassTrackApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ClassTrack',
+      title: 'Class Track',
       theme: ClassTrackTheme.lightTheme,
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,

@@ -7,6 +7,7 @@ import 'components/dashboard_header.dart';
 import 'components/attendance_status_card.dart';
 import 'components/next_class_hero_card.dart';
 import 'components/upcoming_class_card.dart';
+import 'qr_scanner_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -74,10 +75,24 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             ),
           ],
         ),
-        child: const Icon(
-          Icons.qr_code_scanner_rounded,
-          color: Colors.white,
-          size: 32,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QRScannerScreen(),
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(32),
+            child: const Icon(
+              Icons.qr_code_scanner_rounded,
+              color: Colors.white,
+              size: 32,
+            ),
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -90,7 +105,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       height: 56,
       child: ElevatedButton(
         onPressed: () {
-          // TODO: Implement QR Scanning
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+          );
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: ClassTrackTheme.primaryBlue,
