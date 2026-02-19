@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/screens/auth/register_screen.dart';
+import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -218,7 +219,15 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    debugPrint("Login button pressed");
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StudentDashboardScreen(),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ClassTrackTheme.primaryBlue,
                     foregroundColor: Colors.white,
