@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:classtrack/screens/auth/register_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   bool _isStudent = true;
   bool _isPasswordVisible = false;
 
@@ -18,29 +17,47 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ClassTrackTheme.backgroundWhite,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          color: const Color(0xFF0F172A),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          'Create Account',
+          style: GoogleFonts.lexend(
+            color: const Color(0xFF0F172A),
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
-              // Logo
+              const SizedBox(height: 24),
+              // Header Icon
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
+                  color: const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(
-                  Icons.school,
-                  size: 52,
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  size: 32,
                   color: ClassTrackTheme.primaryBlue,
                 ),
               ),
               const SizedBox(height: 16),
               Text(
-                'ClassTrack',
+                'Join ClassTrack',
                 style: GoogleFonts.lexend(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -49,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Smart Attendance Management',
+                'Efficient attendance starts here',
                 style: GoogleFonts.lexend(
                   fontSize: 14,
                   color: const Color(0xFF64748B),
@@ -85,81 +102,33 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Welcome Text
-              Text(
-                'Welcome Back',
-                style: GoogleFonts.lexend(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Secure QR & Geofencing Attendance',
-                style: GoogleFonts.lexend(
-                  fontSize: 14,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 32),
-
               // Form
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'University Email',
-                  style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF334155),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'name@university.edu.et',
-                  hintStyle: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
-                  prefixIcon: const Icon(
-                    Icons.mail_outline_rounded,
-                    color: Color(0xFF94A3B8),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: ClassTrackTheme.primaryBlue,
-                    ),
-                  ),
-                ),
+              _buildLabel('Full Name'),
+              _buildTextField(
+                hintText: 'Enter your full name',
+                icon: Icons.person_outline_rounded,
               ),
               const SizedBox(height: 20),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Password',
-                  style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF334155),
-                  ),
-                ),
+
+              _buildLabel('University ID'),
+              _buildTextField(
+                hintText: 'e.g. 2024012345',
+                icon: Icons.badge_outlined,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
+
+              _buildLabel('University Email'),
+              _buildTextField(
+                hintText: 'name@university.edu',
+                icon: Icons.mail_outline_rounded,
+              ),
+              const SizedBox(height: 20),
+
+              _buildLabel('Password'),
               TextField(
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
-                  hintText: '••••••••',
+                  hintText: 'Create a password',
                   hintStyle: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
                   prefixIcon: const Icon(
                     Icons.lock_outline_rounded,
@@ -196,29 +165,61 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: Text(
-                    'Forgot Password?',
+              const SizedBox(height: 24),
+
+              // Privacy Policy Text
+              Wrap(
+                alignment: WrapAlignment.center,
+                children: [
+                  Text(
+                    'By clicking Register, you agree to our ',
                     style: GoogleFonts.lexend(
-                      fontSize: 13,
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  Text(
+                    'Terms of Service',
+                    style: GoogleFonts.lexend(
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: ClassTrackTheme.primaryBlue,
                     ),
                   ),
-                ),
+                  Text(
+                    ' and ',
+                    style: GoogleFonts.lexend(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                  Text(
+                    'Privacy Policy',
+                    style: GoogleFonts.lexend(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: ClassTrackTheme.primaryBlue,
+                    ),
+                  ),
+                  Text(
+                    '.',
+                    style: GoogleFonts.lexend(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
 
-              // Login Button
+              // Register Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // TODO: Implement Registration Logic
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ClassTrackTheme.primaryBlue,
                     foregroundColor: Colors.white,
@@ -230,12 +231,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       alpha: 0.4,
                     ),
                   ),
-                  child: Text(
-                    'Login',
-                    style: GoogleFonts.lexend(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Register',
+                        style: GoogleFonts.lexend(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 20),
+                    ],
                   ),
                 ),
               ),
@@ -246,23 +254,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Don't have an account? ",
+                    "Already have an account? ",
                     style: GoogleFonts.lexend(
                       color: const Color(0xFF64748B),
                       fontSize: 14,
                     ),
                   ),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
-                        ),
-                      );
-                    },
+                    onTap: () => Navigator.pop(context),
                     child: Text(
-                      'Sign Up',
+                      'Login',
                       style: GoogleFonts.lexend(
                         color: ClassTrackTheme.primaryBlue,
                         fontWeight: FontWeight.w600,
@@ -273,19 +274,49 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 32),
-              // Bottom Tagline
-              Text(
-                'GEOFENCING   •   QR SECURE   •   BIOMETRIC',
-                style: GoogleFonts.lexend(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFFCBD5E1),
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          text,
+          style: GoogleFonts.lexend(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF334155),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({required String hintText, required IconData icon}) {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
+        prefixIcon: Icon(icon, color: const Color(0xFF94A3B8)),
+        filled: true,
+        fillColor: const Color(0xFFF8FAFC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: ClassTrackTheme.primaryBlue),
         ),
       ),
     );
