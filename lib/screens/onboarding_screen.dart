@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
+import 'package:classtrack/screens/auth/login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -71,7 +72,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentPage < _pages.length - 1)
                     TextButton(
                       onPressed: () {
-                        // Logic to skip onboarding (connected to Auth later)
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
                       },
                       child: Text(
                         'Skip',
@@ -204,10 +210,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             curve: Curves.easeInOut,
                           );
                         } else {
-                          // Final Navigation Logic
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Get Started clicked!'),
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
                             ),
                           );
                         }
