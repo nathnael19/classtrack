@@ -49,9 +49,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   const Spacer(flex: 3),
                   // App Icon Container (Glassmorphism effect)
                   SvgPicture.asset(
+                    'assets/logo.svg',
                     width: 200,
                     fit: BoxFit.cover,
-                    'assets/logo.svg',
                     colorFilter: const ColorFilter.mode(
                       Colors.white,
                       BlendMode.srcIn,
@@ -75,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     'Secure Smart Attendance',
                     style: ClassTrackTheme.lightTheme.textTheme.bodyLarge
                         ?.copyWith(
-                          color: Colors.white.withOpacity(0.8),
+                          color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 20,
                           fontWeight: FontWeight.w300,
                         ),
@@ -95,7 +95,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     'INITIALIZING',
                     style: ClassTrackTheme.lightTheme.textTheme.labelLarge
                         ?.copyWith(
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                           letterSpacing: 4,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -109,7 +109,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       'v2.4.0 • Powered by Geofencing',
                       style: ClassTrackTheme.lightTheme.textTheme.bodySmall
                           ?.copyWith(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                           ),
                     ),
