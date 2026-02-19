@@ -12,6 +12,7 @@ dependencies:
   flutter_svg: ^2.2.3
   google_fonts: ^8.0.2
   percent_indicator: ^4.2.5
+  mobile_scanner: ^6.1.1
 
 dev_dependencies:
   flutter_test:

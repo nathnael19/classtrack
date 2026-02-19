@@ -221,7 +221,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     debugPrint("Login button pressed");
-                    Navigator.push(
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Logging in...'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const StudentDashboardScreen(),
