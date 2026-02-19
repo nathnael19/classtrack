@@ -110,19 +110,36 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Illustration Container
-                        Container(
-                          height: 350,
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(10),
-                          child: Center(
-                            child: Image.asset(
-                              width: 350,
-                              _pages[index].imagePath,
-                              fit: BoxFit.cover,
+                        Expanded(
+                          flex: 3,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F4FF),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.08),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 20),
+                                ),
+                                BoxShadow(
+                                  color: Colors.blue.withValues(alpha: 0.05),
+                                  blurRadius: 30,
+                                  offset: const Offset(0, 20),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Image.asset(
+                                _pages[index].imagePath,
+                                fit: BoxFit.contain,
+                              ),
                             ),
                           ),
                         ),
-                        const SizedBox(height: 54),
+                        const SizedBox(height: 32),
                         Text(
                           _pages[index].title,
                           textAlign: TextAlign.center,
@@ -131,12 +148,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               .textTheme
                               .displayLarge
                               ?.copyWith(
-                                fontSize: 30,
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: const Color(0xFF0F172A),
                               ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           child: Text(
