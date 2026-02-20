@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -72,6 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentPage < _pages.length - 1)
                     TextButton(
                       onPressed: () {
+                        context.read<OnboardingCubit>().completeOnboarding();
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -227,6 +230,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             curve: Curves.easeInOut,
                           );
                         } else {
+                          context.read<OnboardingCubit>().completeOnboarding();
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(

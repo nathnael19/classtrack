@@ -3,6 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:classtrack/screens/onboarding_screen.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
+import 'package:classtrack/screens/auth/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -26,9 +29,14 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
+    final hasSeenOnboarding = context.read<OnboardingCubit>().state;
+
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      MaterialPageRoute(
+        builder: (context) =>
+            hasSeenOnboarding ? const LoginScreen() : const OnboardingScreen(),
+      ),
     );
   }
 
