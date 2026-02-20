@@ -27,7 +27,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            useMaterial3: true,
             colorScheme: ColorScheme.light(
               primary: ClassTrackTheme.primaryBlue,
               onPrimary: Colors.white,

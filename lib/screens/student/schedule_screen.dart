@@ -76,7 +76,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            useMaterial3: true,
             colorScheme: ColorScheme.light(
               primary: ClassTrackTheme.primaryBlue,
               onPrimary: Colors.white,
@@ -446,6 +445,7 @@ class ClassCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -459,12 +459,15 @@ class ClassCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF0F172A),
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const SizedBox(width: 8),
               _buildStatusTag(),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Text(
             time,
             style: GoogleFonts.lexend(
@@ -473,7 +476,7 @@ class ClassCard extends StatelessWidget {
               color: const Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Icon(

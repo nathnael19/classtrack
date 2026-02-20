@@ -49,12 +49,23 @@ class DashboardHeader extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: const Color(0xFFFFE4C4),
                 border: Border.all(color: Colors.white, width: 2),
-                image: DecorationImage(
-                  image: NetworkImage(
-                    avatarUrl ??
-                        'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                  ),
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  avatarUrl ??
+                      'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: const Color(0xFFFFE4C4),
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.person,
+                        color: Color(0xFF64748B),
+                        size: 24,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

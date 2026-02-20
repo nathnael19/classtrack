@@ -14,6 +14,7 @@ import 'components/upcoming_class_card.dart';
 import 'qr_scanner_screen.dart';
 import 'schedule_screen.dart';
 import 'history_screen.dart';
+import 'profile_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -29,7 +30,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     const _DashboardHome(),
     const ScheduleScreen(),
     const AttendanceHistoryScreen(),
-    const _ProfilePage(),
+    const ProfileScreen(),
   ];
 
   @override
@@ -317,85 +318,6 @@ class _DashboardHome extends StatelessWidget {
           isOnline: true,
         ),
       ],
-    );
-  }
-}
-
-class _ProfilePage extends StatelessWidget {
-  const _ProfilePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            const DashboardHeader(
-              date: 'Profile Settings',
-              greeting: 'Nathnael Abera',
-            ),
-            const SizedBox(height: 48),
-            _buildProfileOption(
-              icon: Icons.person_outline_rounded,
-              title: 'Personal Information',
-            ),
-            _buildProfileOption(
-              icon: Icons.notifications_none_rounded,
-              title: 'Notifications',
-            ),
-            _buildProfileOption(
-              icon: Icons.security_rounded,
-              title: 'Security',
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  context.read<AuthCubit>().logout();
-                },
-                icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                label: Text(
-                  'Logout',
-                  style: GoogleFonts.lexend(
-                    color: Colors.redAccent,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.redAccent),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileOption({required IconData icon, required String title}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFF64748B)),
-        title: Text(
-          title,
-          style: GoogleFonts.lexend(
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF0F172A),
-          ),
-        ),
-        trailing: const Icon(Icons.chevron_right_rounded, size: 20),
-        tileColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        onTap: () {},
-      ),
     );
   }
 }
