@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/screens/auth/register_screen.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,6 +16,15 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isStudent = true;
   bool _isPasswordVisible = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,6 +130,8 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   hintText: 'name@university.edu.et',
                   hintStyle: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
@@ -158,6 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               TextField(
+                controller: _passwordController,
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   hintText: '••••••••',
@@ -215,44 +229,73 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 24),
 
               // Login Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    debugPrint("Login button pressed");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Logging in...'),
-                        duration: Duration(seconds: 1),
-                      ),
-                    );
+              BlocConsumer<AuthCubit, AuthState>(
+                listener: (context, state) {
+                  if (state.status == AuthStatus.authenticated) {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
                         builder: (context) => const StudentDashboardScreen(),
                       ),
                     );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ClassTrackTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                  } else if (state.status == AuthStatus.unauthenticated &&
+                      state.error != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.error!),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+                builder: (context, state) {
+                  final isLoading = state.status == AuthStatus.loading;
+
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              // Perform login via Cubit
+                              context.read<AuthCubit>().login(
+                                _emailController.text,
+                                _passwordController.text,
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ClassTrackTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
+                        shadowColor: ClassTrackTheme.primaryBlue.withValues(
+                          alpha: 0.4,
+                        ),
+                        disabledBackgroundColor: ClassTrackTheme.primaryBlue
+                            .withValues(alpha: 0.6),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : Text(
+                              'Login',
+                              style: GoogleFonts.lexend(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
-                    elevation: 4,
-                    shadowColor: ClassTrackTheme.primaryBlue.withValues(
-                      alpha: 0.4,
-                    ),
-                  ),
-                  child: Text(
-                    'Login',
-                    style: GoogleFonts.lexend(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 32),
 

@@ -73,14 +73,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const SizedBox(width: 60),
                   if (_currentPage < _pages.length - 1)
                     TextButton(
-                      onPressed: () {
-                        context.read<OnboardingCubit>().completeOnboarding();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
+                      onPressed: () async {
+                        await context
+                            .read<OnboardingCubit>()
+                            .completeOnboarding();
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
+                        }
                       },
                       child: Text(
                         'Skip',
@@ -223,20 +227,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_currentPage < _pages.length - 1) {
                           _pageController.nextPage(
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut,
                           );
                         } else {
-                          context.read<OnboardingCubit>().completeOnboarding();
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
+                          await context
+                              .read<OnboardingCubit>()
+                              .completeOnboarding();
+                          if (mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          }
                         }
                       },
                       child: Row(

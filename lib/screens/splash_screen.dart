@@ -5,7 +5,9 @@ import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
+import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
+import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,25 +20,61 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToOnboarding();
+    _navigateToNext();
   }
 
-  Future<void> _navigateToOnboarding() async {
+  Future<void> _navigateToNext() async {
     // Remove the native splash as soon as the Flutter UI is ready to show splash_screen.dart
     FlutterNativeSplash.remove();
 
-    // Show splash_screen.dart for 2 seconds to showcase branding/loading
+    // Standard delay for branding
     await Future.delayed(const Duration(seconds: 2));
+
     if (!mounted) return;
 
-    final hasSeenOnboarding = context.read<OnboardingCubit>().state;
+    // Access the cubits
+    final onboardingCubit = context.read<OnboardingCubit>();
+    final authCubit = context.read<AuthCubit>();
+
+    // Wait for OnboardingCubit initialization
+    if (onboardingCubit.state.status == OnboardingStatus.initial ||
+        onboardingCubit.state.status == OnboardingStatus.loading) {
+      await for (final state in onboardingCubit.stream) {
+        if (state.status != OnboardingStatus.initial &&
+            state.status != OnboardingStatus.loading) {
+          break;
+        }
+      }
+    }
+
+    // Wait for AuthCubit initialization
+    if (authCubit.state.status == AuthStatus.initial ||
+        authCubit.state.status == AuthStatus.loading) {
+      await for (final state in authCubit.stream) {
+        if (state.status != AuthStatus.initial &&
+            state.status != AuthStatus.loading) {
+          break;
+        }
+      }
+    }
+
+    if (!mounted) return;
+
+    final isOnboardingCompleted = onboardingCubit.state.isCompleted;
+    final isAuthenticated = authCubit.state.isAuthenticated;
+
+    Widget nextScreen;
+    if (!isOnboardingCompleted) {
+      nextScreen = const OnboardingScreen();
+    } else if (!isAuthenticated) {
+      nextScreen = const LoginScreen();
+    } else {
+      nextScreen = const StudentDashboardScreen();
+    }
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            hasSeenOnboarding ? const LoginScreen() : const OnboardingScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => nextScreen),
     );
   }
 
