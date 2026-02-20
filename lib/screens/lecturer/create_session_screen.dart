@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'active_session_screen.dart';
 
 class CreateSessionScreen extends StatefulWidget {
   const CreateSessionScreen({super.key});
@@ -148,7 +149,7 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
             ),
           ),
         ),
-        if (trailing != null) trailing,
+        if (trailing != null) ...[trailing],
       ],
     );
   }
@@ -370,7 +371,16 @@ class _CreateSessionScreenState extends State<CreateSessionScreen> {
       height: 64,
       child: ElevatedButton.icon(
         onPressed: () {
-          // TODO: Implement QR generation
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActiveSessionScreen(
+                courseName: _selectedCourse ?? 'Select Course',
+                duration: '$_selectedDuration min',
+                proximity: _proximityLimit,
+              ),
+            ),
+          );
         },
         icon: const Icon(Icons.qr_code_scanner, color: Colors.white),
         label: Text(
