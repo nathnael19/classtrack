@@ -10,6 +10,7 @@ import 'components/next_class_hero_card.dart';
 import 'components/upcoming_class_card.dart';
 import 'qr_scanner_screen.dart';
 import 'schedule_screen.dart';
+import 'history_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -24,7 +25,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   final List<Widget> _pages = [
     const _DashboardHome(),
     const ScheduleScreen(),
-    const Center(child: Text('History')),
+    const AttendanceHistoryScreen(),
     const Center(child: Text('Profile')),
   ];
 
