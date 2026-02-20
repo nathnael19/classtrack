@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 // Import modular widgets
 import 'components/dashboard_header.dart';
@@ -8,6 +9,7 @@ import 'components/attendance_status_card.dart';
 import 'components/next_class_hero_card.dart';
 import 'components/upcoming_class_card.dart';
 import 'qr_scanner_screen.dart';
+import 'schedule_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -19,47 +21,18 @@ class StudentDashboardScreen extends StatefulWidget {
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   int _selectedIndex = 0;
 
+  final List<Widget> _pages = [
+    const _DashboardHome(),
+    const ScheduleScreen(),
+    const Center(child: Text('History')),
+    const Center(child: Text('Profile')),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA), // Light grey background
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const DashboardHeader(
-                date: 'Monday, Oct 24',
-                greeting: 'Good Morning, Nathnael',
-              ),
-              const SizedBox(height: 24),
-              const AttendanceStatusCard(
-                percent: 0.85,
-                status: 'Great Standing',
-                message: 'You missed only 2 classes this month.',
-              ),
-              const SizedBox(height: 24),
-              NextClassHeroCard(
-                title: 'Advanced Mathematics',
-                time: '10:00 AM',
-                location: 'Room 402',
-                geofenceStatus: 'Inside Campus Geofence',
-                onViewMap: () {
-                  // TODO: Implement View Map
-                },
-              ),
-              const SizedBox(height: 24),
-              _buildScanButton(),
-              const SizedBox(height: 32),
-              _buildUpcomingClassesHeader(),
-              const SizedBox(height: 16),
-              _buildClassList(),
-              const SizedBox(height: 80), // Spacing for bottom nav
-            ],
-          ),
-        ),
-      ),
+      backgroundColor: const Color(0xFFFAFAFA),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigationBar(),
       floatingActionButton: Container(
         height: 64,
@@ -96,107 +69,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-    );
-  }
-
-  Widget _buildScanButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const QRScannerScreen()),
-          );
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: ClassTrackTheme.primaryBlue,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 4,
-          shadowColor: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.qr_code_scanner_rounded, size: 24),
-            const SizedBox(width: 12),
-            Text(
-              'Scan Attendance',
-              style: GoogleFonts.lexend(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpcomingClassesHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          'Upcoming Classes',
-          style: GoogleFonts.lexend(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
-          ),
-        ),
-        TextButton(
-          onPressed: () {
-            // TODO: Navigate to full schedule
-          },
-          child: Text(
-            'See All',
-            style: GoogleFonts.lexend(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: ClassTrackTheme.primaryBlue,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildClassList() {
-    return const Column(
-      children: [
-        UpcomingClassCard(
-          icon: Icons.code_rounded,
-          iconColor: Color(0xFF6366F1),
-          iconBg: Color(0xFFEEF2FF),
-          title: 'Software Engineering',
-          time: '1:00 PM',
-          location: 'Lab 305',
-        ),
-        SizedBox(height: 16),
-        UpcomingClassCard(
-          icon: Icons.storage_rounded,
-          iconColor: Color(0xFFF59E0B),
-          iconBg: Color(0xFFFFFBEB),
-          title: 'Database Systems',
-          time: '3:30 PM',
-          location: 'Main Hall B',
-        ),
-        SizedBox(height: 16),
-        UpcomingClassCard(
-          icon: Icons.language_rounded,
-          iconColor: Color(0xFF10B981),
-          iconBg: Color(0xFFECFDF5),
-          title: 'Web Technology',
-          time: 'Tomorrow • 09:00 AM',
-          location: 'Remote',
-          isOnline: true,
-        ),
-      ],
     );
   }
 
@@ -272,6 +144,164 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DashboardHome extends StatelessWidget {
+  const _DashboardHome();
+
+  @override
+  Widget build(BuildContext context) {
+    final DateTime nowGmt3 = DateTime.now().toUtc().add(
+      const Duration(hours: 3),
+    );
+    final String dateStr = DateFormat('EEEE, MMM d').format(nowGmt3);
+
+    String greeting;
+    int hour = nowGmt3.hour;
+    if (hour < 12) {
+      greeting = 'Good Morning';
+    } else if (hour < 17) {
+      greeting = 'Good Afternoon';
+    } else {
+      greeting = 'Good Evening';
+    }
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DashboardHeader(date: dateStr, greeting: '$greeting, Nathnael'),
+            const SizedBox(height: 24),
+            const AttendanceStatusCard(
+              percent: 0.85,
+              status: 'Great Standing',
+              message: 'You missed only 2 classes this month.',
+            ),
+            const SizedBox(height: 24),
+            NextClassHeroCard(
+              title: 'Advanced Mathematics',
+              time: '10:00 AM',
+              location: 'Room 402',
+              geofenceStatus: 'Inside Campus Geofence',
+              onViewMap: () {
+                // TODO: Implement View Map
+              },
+            ),
+            const SizedBox(height: 24),
+            _buildScanButton(context),
+            const SizedBox(height: 32),
+            _buildUpcomingClassesHeader(),
+            const SizedBox(height: 16),
+            _buildClassList(),
+            const SizedBox(height: 80), // Spacing for bottom nav
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: ClassTrackTheme.primaryBlue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 4,
+          shadowColor: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.qr_code_scanner_rounded, size: 24),
+            const SizedBox(width: 12),
+            Text(
+              'Scan Attendance',
+              style: GoogleFonts.lexend(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUpcomingClassesHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Upcoming Classes',
+          style: GoogleFonts.lexend(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF0F172A),
+          ),
+        ),
+        TextButton(
+          onPressed: () {
+            // Navigation handled by bottom bar
+          },
+          child: Text(
+            'See All',
+            style: GoogleFonts.lexend(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: ClassTrackTheme.primaryBlue,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClassList() {
+    return const Column(
+      children: [
+        UpcomingClassCard(
+          icon: Icons.code_rounded,
+          iconColor: Color(0xFF6366F1),
+          iconBg: Color(0xFFEEF2FF),
+          title: 'Software Engineering',
+          time: '1:00 PM',
+          location: 'Lab 305',
+        ),
+        SizedBox(height: 16),
+        UpcomingClassCard(
+          icon: Icons.storage_rounded,
+          iconColor: Color(0xFFF59E0B),
+          iconBg: Color(0xFFFFFBEB),
+          title: 'Database Systems',
+          time: '3:30 PM',
+          location: 'Main Hall B',
+        ),
+        SizedBox(height: 16),
+        UpcomingClassCard(
+          icon: Icons.language_rounded,
+          iconColor: Color(0xFF10B981),
+          iconBg: Color(0xFFECFDF5),
+          title: 'Web Technology',
+          time: 'Tomorrow • 09:00 AM',
+          location: 'Remote',
+          isOnline: true,
+        ),
+      ],
     );
   }
 }

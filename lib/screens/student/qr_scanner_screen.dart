@@ -316,7 +316,7 @@ class QRScannerOverlay extends StatelessWidget {
 
         // Border Corners
         Center(
-          child: Container(
+          child: SizedBox(
             height: cutOutSize,
             width: cutOutSize,
             child: CustomPaint(
