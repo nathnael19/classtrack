@@ -5,6 +5,7 @@ import 'components/lecturer_header.dart';
 import 'components/stat_card.dart';
 import 'components/start_session_banner.dart';
 import 'components/lecturer_class_card.dart';
+import 'attendance_list_screen.dart';
 import 'lecturer_analytics_screen.dart';
 
 class LecturerDashboardScreen extends StatefulWidget {
@@ -28,7 +29,7 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
           children: [
             _buildHome(),
             const LecturerAnalyticsScreen(),
-            const Center(child: Text('Classes')),
+            const Center(child: Text('Students')),
             const Center(child: Text('Settings')),
           ],
         ),
@@ -97,7 +98,14 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
             location: 'Auditorium B, Science Block',
             imageUrl:
                 'https://plus.unsplash.com/premium_photo-1664110691109-65576cb077c1?auto=format&fit=crop&q=80&w=400',
-            onViewStudents: () {},
+            onViewStudents: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AttendanceListScreen(),
+                ),
+              );
+            },
             onManageSession: () {},
           ),
           const SizedBox(height: 16),
@@ -127,16 +135,20 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildNavItem(
-            icon: Icons.grid_view_rounded,
-            label: 'Dashboard',
+            icon: Icons.calendar_today_rounded,
+            label: 'Sessions',
             index: 0,
           ),
           _buildNavItem(
-            icon: Icons.bar_chart_rounded,
+            icon: Icons.analytics_outlined,
             label: 'Analytics',
             index: 1,
           ),
-          _buildNavItem(icon: Icons.book_outlined, label: 'Classes', index: 2),
+          _buildNavItem(
+            icon: Icons.people_outline_rounded,
+            label: 'Students',
+            index: 2,
+          ),
           _buildNavItem(
             icon: Icons.settings_outlined,
             label: 'Settings',

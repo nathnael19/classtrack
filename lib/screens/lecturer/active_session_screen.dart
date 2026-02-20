@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'attendance_list_screen.dart';
 
 class ActiveSessionScreen extends StatefulWidget {
   final String courseName;
@@ -371,12 +372,24 @@ class _ActiveSessionScreenState extends State<ActiveSessionScreen> {
             color: const Color(0xFF0F172A),
           ),
         ),
-        Text(
-          'View List',
-          style: GoogleFonts.lexend(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: ClassTrackTheme.primaryBlue,
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AttendanceListScreen(
+                  section: 'Hall A-102', // Mocking based on UI
+                ),
+              ),
+            );
+          },
+          child: Text(
+            'View List',
+            style: GoogleFonts.lexend(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: ClassTrackTheme.primaryBlue,
+            ),
           ),
         ),
       ],
