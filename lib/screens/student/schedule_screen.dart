@@ -13,13 +13,14 @@ class ScheduleScreen extends StatefulWidget {
 class _ScheduleScreenState extends State<ScheduleScreen> {
   final ScrollController _scrollController = ScrollController();
   late int _selectedDayIndex;
-  late final List<Map<String, String>> _days;
-  late final DateTime _nowGmt3;
+  late List<Map<String, String>> _days;
+  late DateTime _anchorDate; // The date used to determine which week to show
 
   @override
   void initState() {
     super.initState();
-    _initializeDynamicDates();
+    _anchorDate = DateTime.now().toUtc().add(const Duration(hours: 3));
+    _initializeDynamicDates(_anchorDate);
     // Scroll to today's date after the first frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedDay();
@@ -35,11 +36,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   void _scrollToSelectedDay() {
     if (_scrollController.hasClients) {
       // Each date item is 70 wide + 16 horizontal margins (8 on each side) = 86 total per item
-      // The selector has 16 units of horizontal padding at the start
       const double itemWidth = 86.0;
 
       // Calculate target offset
-      // We want the selected item at the start or slightly centered
       final double targetOffset = (_selectedDayIndex * itemWidth);
 
       _scrollController.animateTo(
@@ -50,13 +49,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  void _initializeDynamicDates() {
-    // Current time in GMT+3
-    _nowGmt3 = DateTime.now().toUtc().add(const Duration(hours: 3));
-
-    // Find the Monday of the current week (Monday is 1 in Dart)
-    final int daysSinceMonday = _nowGmt3.weekday - 1;
-    final DateTime monday = _nowGmt3.subtract(Duration(days: daysSinceMonday));
+  void _initializeDynamicDates(DateTime anchor) {
+    // Find the Monday of the week containing the anchor date
+    final int daysSinceMonday = anchor.weekday - 1;
+    final DateTime monday = anchor.subtract(Duration(days: daysSinceMonday));
 
     _days = List.generate(7, (index) {
       final DateTime date = monday.add(Duration(days: index));
@@ -67,8 +63,61 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       };
     });
 
-    // Set selected index to today
+    // Set selected index to the offset from Monday for the anchor date
     _selectedDayIndex = daysSinceMonday;
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _anchorDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            useMaterial3: true,
+            colorScheme: ColorScheme.light(
+              primary: ClassTrackTheme.primaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: const Color(0xFF0F172A),
+            ),
+            datePickerTheme: DatePickerThemeData(
+              headerBackgroundColor: ClassTrackTheme.primaryBlue,
+              headerForegroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              dayStyle: GoogleFonts.lexend(fontWeight: FontWeight.w500),
+              weekdayStyle: GoogleFonts.lexend(
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.bold,
+              ),
+              yearStyle: GoogleFonts.lexend(),
+              headerHeadlineStyle: GoogleFonts.lexend(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              headerHelpStyle: GoogleFonts.lexend(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _anchorDate = picked;
+        _initializeDynamicDates(picked);
+      });
+      _scrollToSelectedDay();
+    }
   }
 
   @override
@@ -78,7 +127,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             const SizedBox(height: 24),
             _buildDateSelector(),
             const SizedBox(height: 32),
@@ -143,7 +192,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
@@ -162,7 +211,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                DateFormat('MMMM yyyy').format(_nowGmt3),
+                DateFormat('MMMM yyyy').format(_anchorDate),
                 style: GoogleFonts.lexend(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -171,22 +220,25 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ],
           ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              Icons.calendar_month_outlined,
-              color: ClassTrackTheme.primaryBlue,
+          GestureDetector(
+            onTap: () => _selectDate(context),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                Icons.calendar_month_outlined,
+                color: ClassTrackTheme.primaryBlue,
+              ),
             ),
           ),
         ],

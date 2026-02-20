@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../theme/design_theme.dart';
 import 'components/history_filter_dropdowns.dart';
 import 'components/history_stats_card.dart';
 import 'components/history_session_item.dart';
@@ -15,6 +16,59 @@ class AttendanceHistoryScreen extends StatefulWidget {
 class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   String _selectedCourse = 'All Courses';
   String _selectedPeriod = 'This Month';
+  DateTime? _selectedDate;
+
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            useMaterial3: true,
+            colorScheme: ColorScheme.light(
+              primary: ClassTrackTheme.primaryBlue,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: const Color(0xFF0F172A),
+            ),
+            datePickerTheme: DatePickerThemeData(
+              headerBackgroundColor: ClassTrackTheme.primaryBlue,
+              headerForegroundColor: Colors.white,
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              dayStyle: GoogleFonts.lexend(fontWeight: FontWeight.w500),
+              weekdayStyle: GoogleFonts.lexend(
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.bold,
+              ),
+              yearStyle: GoogleFonts.lexend(),
+              headerHeadlineStyle: GoogleFonts.lexend(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              headerHelpStyle: GoogleFonts.lexend(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+      // TODO: Filter history list based on selected date
+      debugPrint('Selected date: ${picked.toString()}');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +77,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -63,13 +117,30 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    Text(
-                      'Recent Sessions',
-                      style: GoogleFonts.lexend(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF0F172A),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Recent Sessions',
+                          style: GoogleFonts.lexend(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF0F172A),
+                          ),
+                        ),
+                        if (_selectedDate != null)
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _selectedDate = null),
+                            child: Text(
+                              'Clear Date',
+                              style: GoogleFonts.lexend(
+                                color: ClassTrackTheme.primaryBlue,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     const HistorySessionItem(
@@ -111,7 +182,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Row(
@@ -129,11 +200,13 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {},
-            icon: const Icon(
+            onPressed: () => _selectDate(context),
+            icon: Icon(
               Icons.calendar_today_outlined,
               size: 20,
-              color: Color(0xFF0F172A),
+              color: _selectedDate != null
+                  ? ClassTrackTheme.primaryBlue
+                  : const Color(0xFF0F172A),
             ),
           ),
         ],
