@@ -1,0 +1,12 @@
+flutter_native_splash:
+  color: "#3F68E4"
+  # Image removed to make the transition into splash_screen.dart feel like a single screen
+  # image: assets/logo_mark.png
+
+  android_12:
+    color: "#3F68E4"
+    # No icon for Android 12+ splash screen to match the solid background feel
+
+  android: true
+  ios: true
+  fullscreen: true

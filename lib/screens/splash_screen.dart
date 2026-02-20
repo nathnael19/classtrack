@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:classtrack/screens/onboarding_screen.dart';
 import 'package:classtrack/theme/design_theme.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,8 +19,11 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToOnboarding() async {
-    // Simmons a loading process
-    await Future.delayed(const Duration(seconds: 4));
+    // Remove the native splash as soon as the Flutter UI is ready to show splash_screen.dart
+    FlutterNativeSplash.remove();
+
+    // Show splash_screen.dart for 2 seconds to showcase branding/loading
+    await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
     Navigator.pushReplacement(
