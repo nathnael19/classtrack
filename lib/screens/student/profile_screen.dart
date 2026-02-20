@@ -4,6 +4,7 @@ import 'package:percent_indicator/percent_indicator.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
+import 'package:classtrack/screens/student/settings_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -23,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 32),
               _buildAttendanceCard(),
               const SizedBox(height: 32),
-              _buildSettingsSection(),
+              _buildSettingsSection(context),
               const SizedBox(height: 24),
               _buildLogoutButton(context),
               const SizedBox(height: 40),
@@ -274,7 +275,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSettingsSection() {
+  Widget _buildSettingsSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -299,6 +300,12 @@ class ProfileScreen extends StatelessWidget {
           icon: Icons.settings_outlined,
           iconColor: const Color(0xFF64748B),
           title: 'Settings',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
+          },
         ),
       ],
     );
@@ -309,6 +316,7 @@ class ProfileScreen extends StatelessWidget {
     required Color iconColor,
     required String title,
     String? trailingText,
+    VoidCallback? onTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -355,7 +363,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
-        onTap: () {},
+        onTap: onTap ?? () {},
       ),
     );
   }
