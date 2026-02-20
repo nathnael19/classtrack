@@ -5,6 +5,7 @@ import 'package:classtrack/screens/auth/register_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
+import 'package:classtrack/screens/lecturer/lecturer_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -232,11 +233,12 @@ class _LoginScreenState extends State<LoginScreen> {
               BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state.status == AuthStatus.authenticated) {
+                    final nextScreen = state.userRole == UserRole.lecturer
+                        ? const LecturerDashboardScreen()
+                        : const StudentDashboardScreen();
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => const StudentDashboardScreen(),
-                      ),
+                      MaterialPageRoute(builder: (context) => nextScreen),
                     );
                   } else if (state.status == AuthStatus.unauthenticated &&
                       state.error != null) {
@@ -262,6 +264,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               context.read<AuthCubit>().login(
                                 _emailController.text,
                                 _passwordController.text,
+                                _isStudent
+                                    ? UserRole.student
+                                    : UserRole.lecturer,
                               );
                             },
                       style: ElevatedButton.styleFrom(

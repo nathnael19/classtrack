@@ -108,6 +108,8 @@ class LecturerClassCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: const Color(0xFF0F172A),
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -118,11 +120,15 @@ class LecturerClassCard extends StatelessWidget {
                               color: Color(0xFF94A3B8),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              time,
-                              style: GoogleFonts.lexend(
-                                fontSize: 13,
-                                color: const Color(0xFF64748B),
+                            Expanded(
+                              child: Text(
+                                time,
+                                style: GoogleFonts.lexend(
+                                  fontSize: 13,
+                                  color: const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -136,11 +142,15 @@ class LecturerClassCard extends StatelessWidget {
                               color: Color(0xFF94A3B8),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              location,
-                              style: GoogleFonts.lexend(
-                                fontSize: 13,
-                                color: const Color(0xFF64748B),
+                            Expanded(
+                              child: Text(
+                                location,
+                                style: GoogleFonts.lexend(
+                                  fontSize: 13,
+                                  color: const Color(0xFF64748B),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -156,6 +166,17 @@ class LecturerClassCard extends StatelessWidget {
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 80,
+                          height: 80,
+                          color: const Color(0xFFF1F5F9),
+                          child: const Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Color(0xFF94A3B8),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],

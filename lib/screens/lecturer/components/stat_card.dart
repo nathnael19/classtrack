@@ -41,12 +41,16 @@ class StatCard extends StatelessWidget {
               children: [
                 Icon(icon, color: iconColor, size: 20),
                 const SizedBox(width: 8),
-                Text(
-                  label,
-                  style: GoogleFonts.lexend(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: const Color(0xFF64748B),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: GoogleFonts.lexend(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],

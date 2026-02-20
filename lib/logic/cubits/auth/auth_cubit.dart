@@ -4,12 +4,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated }
 
+enum UserRole { student, lecturer }
+
 class AuthState {
   final AuthStatus status;
   final bool isAuthenticated;
+  final UserRole? userRole;
   final String? error;
 
-  AuthState({required this.status, required this.isAuthenticated, this.error});
+  AuthState({
+    required this.status,
+    required this.isAuthenticated,
+    this.userRole,
+    this.error,
+  });
 
   factory AuthState.initial() =>
       AuthState(status: AuthStatus.initial, isAuthenticated: false);
@@ -17,12 +25,14 @@ class AuthState {
   AuthState copyWith({
     AuthStatus? status,
     bool? isAuthenticated,
+    UserRole? userRole,
     String? error,
     bool clearError = false,
   }) {
     return AuthState(
       status: status ?? this.status,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      userRole: userRole ?? this.userRole,
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -39,12 +49,21 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
     try {
       final isAuthenticated = prefs.getBool('is_logged_in') ?? false;
+      final roleString = prefs.getString('user_role');
+      final userRole = roleString != null
+          ? UserRole.values.firstWhere(
+              (r) => r.name == roleString,
+              orElse: () => UserRole.student,
+            )
+          : null;
+
       emit(
         state.copyWith(
           status: isAuthenticated
               ? AuthStatus.authenticated
               : AuthStatus.unauthenticated,
           isAuthenticated: isAuthenticated,
+          userRole: userRole,
         ),
       );
     } catch (e) {
@@ -58,7 +77,7 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(String email, String password, UserRole role) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
       // Mock login delay
@@ -67,10 +86,12 @@ class AuthCubit extends Cubit<AuthState> {
       // Simple validation for demonstration
       if (email.contains('@') && password.length >= 6) {
         await prefs.setBool('is_logged_in', true);
+        await prefs.setString('user_role', role.name);
         emit(
           state.copyWith(
             status: AuthStatus.authenticated,
             isAuthenticated: true,
+            userRole: role,
           ),
         );
       } else {
@@ -98,10 +119,13 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
     try {
       await prefs.setBool('is_logged_in', false);
+      await prefs.remove('user_role');
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
           isAuthenticated: false,
+          userRole: null,
+          clearError: true,
         ),
       );
     } catch (e) {

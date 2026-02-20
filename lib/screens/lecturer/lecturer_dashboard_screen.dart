@@ -95,7 +95,7 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
             time: '10:00 AM - 12:00 PM',
             location: 'Auditorium B, Science Block',
             imageUrl:
-                'https://images.unsplash.com/photo-1541339907198-e08756ebafe3?auto=format&fit=crop&q=80&w=400',
+                'https://plus.unsplash.com/premium_photo-1664110691109-65576cb077c1?auto=format&fit=crop&q=80&w=400',
             onViewStudents: () {},
             onManageSession: () {},
           ),
@@ -107,7 +107,7 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
             time: '02:00 PM - 04:00 PM',
             location: 'Lab 4, Innovation Center',
             imageUrl:
-                'https://images.unsplash.com/photo-1544006659-f0b21f04cb1d?auto=format&fit=crop&q=80&w=400',
+                'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&q=80&w=400',
           ),
           const SizedBox(height: 100), // Space for bottom nav
         ],
