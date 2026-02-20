@@ -5,6 +5,7 @@ import 'components/lecturer_header.dart';
 import 'components/stat_card.dart';
 import 'components/start_session_banner.dart';
 import 'components/lecturer_class_card.dart';
+import 'lecturer_analytics_screen.dart';
 
 class LecturerDashboardScreen extends StatefulWidget {
   const LecturerDashboardScreen({super.key});
@@ -26,7 +27,7 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
           index: _selectedIndex,
           children: [
             _buildHome(),
-            const Center(child: Text('History')),
+            const LecturerAnalyticsScreen(),
             const Center(child: Text('Classes')),
             const Center(child: Text('Settings')),
           ],
@@ -131,8 +132,8 @@ class _LecturerDashboardScreenState extends State<LecturerDashboardScreen> {
             index: 0,
           ),
           _buildNavItem(
-            icon: Icons.history_rounded,
-            label: 'History',
+            icon: Icons.bar_chart_rounded,
+            label: 'Analytics',
             index: 1,
           ),
           _buildNavItem(icon: Icons.book_outlined, label: 'Classes', index: 2),
