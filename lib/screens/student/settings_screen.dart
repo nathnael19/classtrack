@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/theme/design_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:local_auth/local_auth.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,9 +13,122 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final LocalAuthentication auth = LocalAuthentication();
   bool _darkMode = false;
-  bool _pushNotifications = true;
-  bool _biometricLogin = true;
+  bool _pushNotifications = false;
+  bool _biometricLogin = false;
+  bool _locationAccess = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Check actual permission status to sync UI
+    final isNotifGranted = await Permission.notification.isGranted;
+    final isLocGranted = await Permission.location.isGranted;
+
+    setState(() {
+      _darkMode = prefs.getBool('dark_mode') ?? false;
+      _pushNotifications =
+          (prefs.getBool('push_notifications') ?? false) && isNotifGranted;
+      _biometricLogin = prefs.getBool('biometric_login') ?? false;
+      _locationAccess =
+          (prefs.getBool('location_access') ?? false) && isLocGranted;
+    });
+  }
+
+  Future<void> _updateSetting(String key, bool value) async {
+    if (value == true) {
+      if (key == 'biometric_login') {
+        final bool canAuthenticateWithBiometrics =
+            await auth.canCheckBiometrics;
+        final bool canAuthenticate =
+            canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+
+        if (!canAuthenticate) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Biometric authentication is not available on this device.',
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+
+        try {
+          final bool didAuthenticate = await auth.authenticate(
+            localizedReason: 'Please authenticate to enable biometric login',
+            options: const AuthenticationOptions(
+              stickyAuth: true,
+              biometricOnly: true,
+            ),
+          );
+
+          if (!didAuthenticate) return;
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Authentication error: $e'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+      }
+
+      Permission? permission;
+      if (key == 'push_notifications') permission = Permission.notification;
+      if (key == 'location_access') permission = Permission.location;
+
+      if (permission != null) {
+        final status = await permission.request();
+        if (!mounted) return;
+
+        if (!status.isGranted) {
+          String message = 'Permission denied';
+          if (key == 'push_notifications')
+            message = 'Notification permission denied';
+          if (key == 'location_access') message = 'Location permission denied';
+
+          SnackBarAction? action;
+          if (status.isPermanentlyDenied) {
+            message = 'Permissions: Permanently Disabled';
+            action = SnackBarAction(
+              label: 'SETTINGS',
+              onPressed: () => openAppSettings(),
+            );
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              action: action,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
+    setState(() {
+      if (key == 'dark_mode') _darkMode = value;
+      if (key == 'push_notifications') _pushNotifications = value;
+      if (key == 'biometric_login') _biometricLogin = value;
+      if (key == 'location_access') _locationAccess = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +157,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.dark_mode_outlined,
                   title: 'Dark Mode',
                   value: _darkMode,
-                  onChanged: (val) => setState(() => _darkMode = val),
+                  onChanged: (val) => _updateSetting('dark_mode', val),
                 ),
                 _buildSwitchItem(
                   icon: Icons.notifications_none_rounded,
                   title: 'Push Notifications',
                   value: _pushNotifications,
-                  onChanged: (val) => setState(() => _pushNotifications = val),
+                  onChanged: (val) => _updateSetting('push_notifications', val),
                 ),
               ]),
               const SizedBox(height: 32),
@@ -57,15 +173,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   icon: Icons.fingerprint_rounded,
                   title: 'Biometric Login',
                   value: _biometricLogin,
-                  onChanged: (val) => setState(() => _biometricLogin = val),
+                  onChanged: (val) => _updateSetting('biometric_login', val),
                 ),
-                _buildStatusItem(
+                _buildSwitchItem(
                   icon: Icons.location_on_outlined,
                   title: 'Location Access',
-                  subtitle: 'Required for geofencing',
-                  status: 'Enabled',
-                  statusColor: const Color(0xFF22C55E),
-                  statusBg: const Color(0xFFF0FDF4),
+                  value: _locationAccess,
+                  onChanged: (val) => _updateSetting('location_access', val),
                 ),
               ]),
               const SizedBox(height: 32),
@@ -182,65 +296,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         inactiveThumbColor: Colors.white,
         inactiveTrackColor: const Color(0xFFE2E8F0),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
-      ),
-    );
-  }
-
-  Widget _buildStatusItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String status,
-    required Color statusColor,
-    required Color statusBg,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: _buildIconFrame(icon),
-      title: Text(
-        title,
-        style: GoogleFonts.lexend(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF334155),
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: GoogleFonts.lexend(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: const Color(0xFF94A3B8),
-        ),
-      ),
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: statusBg,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: statusColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              status,
-              style: GoogleFonts.lexend(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: statusColor,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

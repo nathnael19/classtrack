@@ -49,5 +49,9 @@
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>ClassTrack requires location access for geofencing attendance.</string>
+		<key>NSFaceIDUsageDescription</key>
+		<string>ClassTrack requires Face ID for secure biometric login.</string>
 	</dict>
 </plist>

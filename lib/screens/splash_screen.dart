@@ -8,6 +8,8 @@ import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:local_auth/local_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -69,6 +71,49 @@ class _SplashScreenState extends State<SplashScreen> {
     } else if (!isAuthenticated) {
       nextScreen = const LoginScreen();
     } else {
+      // Check for Biometric Login
+      final prefs = await SharedPreferences.getInstance();
+      final isBiometricEnabled = prefs.getBool('biometric_login') ?? false;
+
+      if (isBiometricEnabled) {
+        final LocalAuthentication auth = LocalAuthentication();
+        final bool canAuthenticateWithBiometrics =
+            await auth.canCheckBiometrics;
+        final bool canAuthenticate =
+            canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+
+        if (canAuthenticate) {
+          try {
+            final bool didAuthenticate = await auth.authenticate(
+              localizedReason: 'Please authenticate to access ClassTrack',
+              options: const AuthenticationOptions(
+                stickyAuth: true,
+                biometricOnly: true,
+              ),
+            );
+
+            if (!didAuthenticate) {
+              // Stay on splash and wait for retry if they cancel?
+              // For now, if failed, we could show a snackbar and NOT navigate.
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Biometric authentication failed. Please try again.',
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+              // Allow some time before retrying or just stop here?
+              // Let's add a button to retry manually if it fails.
+              return;
+            }
+          } catch (e) {
+            // If error, maybe fallback to standard login?
+            debugPrint('Biometric error: $e');
+          }
+        }
+      }
       nextScreen = const StudentDashboardScreen();
     }
 
