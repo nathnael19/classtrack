@@ -5,7 +5,6 @@ import 'package:classtrack/screens/auth/register_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
-import 'package:classtrack/screens/lecturer/lecturer_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -70,32 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Role Toggle
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildRoleButton(
-                        'Student',
-                        isSelected: _isStudent,
-                        onTap: () => setState(() => _isStudent = true),
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildRoleButton(
-                        'Lecturer',
-                        isSelected: !_isStudent,
-                        onTap: () => setState(() => _isStudent = false),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
               const SizedBox(height: 32),
 
               // Welcome Text
@@ -233,9 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
               BlocConsumer<AuthCubit, AuthState>(
                 listener: (context, state) {
                   if (state.status == AuthStatus.authenticated) {
-                    final nextScreen = state.userRole == UserRole.lecturer
-                        ? const LecturerDashboardScreen()
-                        : const StudentDashboardScreen();
+                    final nextScreen = const StudentDashboardScreen();
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(builder: (context) => nextScreen),
@@ -266,7 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _passwordController.text,
                                 _isStudent
                                     ? UserRole.student
-                                    : UserRole.lecturer,
+                                    : UserRole.student,
                               );
                             },
                       style: ElevatedButton.styleFrom(
@@ -354,41 +325,5 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildRoleButton(
-    String title, {
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Center(
-          child: Text(
-            title,
-            style: GoogleFonts.lexend(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isSelected
-                  ? ClassTrackTheme.primaryBlue
-                  : const Color(0xFF64748B),
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

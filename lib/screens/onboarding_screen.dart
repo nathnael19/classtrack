@@ -25,7 +25,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     OnboardingData(
       title: 'Scan. Verify. Done.',
       description:
-          'Just aim your camera at the lecturer\'s QR code. Our smart scanning technology does the rest in seconds.',
+          'Just aim your camera at the class QR code. Our smart scanning technology does the rest in seconds.',
       imagePath: 'assets/Overlay (1).png',
     ),
     OnboardingData(

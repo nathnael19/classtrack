@@ -12,6 +12,7 @@ class ClassTrackTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.light,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryBlue,
         primary: primaryBlue,
@@ -19,7 +20,7 @@ class ClassTrackTheme {
         onSurface: textDark,
         error: errorRed,
       ),
-      scaffoldBackgroundColor: backgroundWhite,
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
       textTheme: GoogleFonts.lexendTextTheme().copyWith(
         displayLarge: GoogleFonts.lexend(
           fontSize: 32,
@@ -46,7 +47,9 @@ class ClassTrackTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
-          shape: const StadiumBorder(),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           textStyle: GoogleFonts.lexend(
             fontSize: 16,
@@ -54,18 +57,48 @@ class ClassTrackTheme {
           ),
         ),
       ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          foregroundColor: primaryBlue,
-          side: const BorderSide(color: primaryBlue),
+    );
+  }
+
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF3B82F6),
+        secondary: Color(0xFF10B981),
+        surface: Color(0xFF1E293B),
+        onSurface: Colors.white,
+        background: Color(0xFF0F172B),
+        error: Color(0xFFEF4444),
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0F172B),
+      textTheme: GoogleFonts.lexendTextTheme()
+          .apply(bodyColor: Colors.white, displayColor: Colors.white)
+          .copyWith(
+            displayLarge: GoogleFonts.lexend(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            titleLarge: GoogleFonts.lexend(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            bodyMedium: GoogleFonts.lexend(
+              fontSize: 14,
+              color: const Color(0xFF94A3B8),
+            ),
+          ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF3B82F6),
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(32),
+            borderRadius: BorderRadius.circular(12),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          textStyle: GoogleFonts.lexend(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          elevation: 0,
         ),
       ),
     );

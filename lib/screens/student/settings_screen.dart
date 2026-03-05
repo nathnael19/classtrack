@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:classtrack/logic/cubits/theme/theme_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -14,7 +16,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final LocalAuthentication auth = LocalAuthentication();
-  bool _darkMode = false;
   bool _pushNotifications = false;
   bool _biometricLogin = false;
   bool _locationAccess = false;
@@ -33,7 +34,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final isLocGranted = await Permission.location.isGranted;
 
     setState(() {
-      _darkMode = prefs.getBool('dark_mode') ?? false;
       _pushNotifications =
           (prefs.getBool('push_notifications') ?? false) && isNotifGranted;
       _biometricLogin = prefs.getBool('biometric_login') ?? false;
@@ -156,8 +156,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildSwitchItem(
                   icon: Icons.dark_mode_outlined,
                   title: 'Dark Mode',
-                  value: _darkMode,
-                  onChanged: (val) => _updateSetting('dark_mode', val),
+                  value: context.watch<ThemeCubit>().isDarkMode,
+                  onChanged: (val) {
+                    _updateSetting('dark_mode', val);
+                    context.read<ThemeCubit>().toggleTheme(val);
+                  },
                 ),
                 _buildSwitchItem(
                   icon: Icons.notifications_none_rounded,

@@ -49,13 +49,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(state.copyWith(status: AuthStatus.loading));
     try {
       final isAuthenticated = prefs.getBool('is_logged_in') ?? false;
-      final roleString = prefs.getString('user_role');
-      final userRole = roleString != null
-          ? UserRole.values.firstWhere(
-              (r) => r.name == roleString,
-              orElse: () => UserRole.student,
-            )
-          : null;
+      final userRole = UserRole.student;
 
       emit(
         state.copyWith(

@@ -8,7 +8,6 @@ import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
-import 'package:classtrack/screens/lecturer/lecturer_dashboard_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 
@@ -115,9 +114,7 @@ class _SplashScreenState extends State<SplashScreen> {
           }
         }
       }
-      nextScreen = authCubit.state.userRole == UserRole.lecturer
-          ? const LecturerDashboardScreen()
-          : const StudentDashboardScreen();
+      nextScreen = const StudentDashboardScreen();
     }
 
     Navigator.pushReplacement(

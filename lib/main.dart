@@ -5,6 +5,7 @@ import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
+import 'package:classtrack/logic/cubits/theme/theme_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -19,6 +20,7 @@ void main() async {
       providers: [
         BlocProvider(create: (context) => OnboardingCubit(prefs: prefs)),
         BlocProvider(create: (context) => AuthCubit(prefs: prefs)),
+        BlocProvider(create: (context) => ThemeCubit(prefs: prefs)),
       ],
       child: const ClassTrackApp(),
     ),
@@ -30,11 +32,17 @@ class ClassTrackApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Class Track',
-      theme: ClassTrackTheme.lightTheme,
-      home: const SplashScreen(),
-      debugShowCheckedModeBanner: false,
+    return BlocBuilder<ThemeCubit, ThemeMode>(
+      builder: (context, themeMode) {
+        return MaterialApp(
+          title: 'Class Track',
+          theme: ClassTrackTheme.lightTheme,
+          darkTheme: ClassTrackTheme.darkTheme,
+          themeMode: themeMode,
+          home: const SplashScreen(),
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }
