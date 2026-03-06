@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -55,9 +56,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentPage > 0)
                     TextButton(
                       onPressed: () {
+                        HapticFeedback.lightImpact();
                         _pageController.previousPage(
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeInOut,
+                          duration: const Duration(milliseconds: 400),
+                          curve: Curves.easeOutCubic,
                         );
                       },
                       child: Text(
@@ -74,17 +76,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_currentPage < _pages.length - 1)
                     TextButton(
                       onPressed: () async {
-                        await context
-                            .read<OnboardingCubit>()
-                            .completeOnboarding();
-                        if (mounted) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
-                          );
-                        }
+                        HapticFeedback.lightImpact();
+                        final currentContext = context;
+                        final onboardingCubit = currentContext
+                            .read<OnboardingCubit>();
+                        await onboardingCubit.completeOnboarding();
+                        if (!currentContext.mounted) return;
+
+                        Navigator.pushReplacement(
+                          currentContext,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
                       },
                       child: Text(
                         'Skip',
@@ -228,23 +232,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     child: ElevatedButton(
                       onPressed: () async {
+                        HapticFeedback.lightImpact();
                         if (_currentPage < _pages.length - 1) {
                           _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
-                            curve: Curves.easeInOut,
+                            duration: const Duration(milliseconds: 400),
+                            curve: Curves.easeOutCubic,
                           );
                         } else {
-                          await context
-                              .read<OnboardingCubit>()
-                              .completeOnboarding();
-                          if (mounted) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
-                            );
-                          }
+                          final currentContext = context;
+                          final onboardingCubit = currentContext
+                              .read<OnboardingCubit>();
+                          await onboardingCubit.completeOnboarding();
+                          if (!currentContext.mounted) return;
+
+                          Navigator.pushReplacement(
+                            currentContext,
+                            MaterialPageRoute(
+                              builder: (context) => const LoginScreen(),
+                            ),
+                          );
                         }
                       },
                       child: Row(
