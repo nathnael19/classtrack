@@ -69,7 +69,6 @@ class ClassTrackTheme {
         secondary: Color(0xFF10B981),
         surface: Color(0xFF1E293B),
         onSurface: Colors.white,
-        background: Color(0xFF0F172B),
         error: Color(0xFFEF4444),
       ),
       scaffoldBackgroundColor: const Color(0xFF0F172B),
