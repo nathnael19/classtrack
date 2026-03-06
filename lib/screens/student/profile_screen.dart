@@ -1,13 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:percent_indicator/percent_indicator.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/settings_screen.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickImage() async {
+    final currentContext = context;
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (!currentContext.mounted) return;
+      ScaffoldMessenger.of(
+        currentContext,
+      ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,8 +47,6 @@ class ProfileScreen extends StatelessWidget {
               _buildAppBar(context),
               const SizedBox(height: 32),
               _buildProfileHeader(),
-              const SizedBox(height: 32),
-              _buildAttendanceCard(),
               const SizedBox(height: 32),
               _buildSettingsSection(context),
               const SizedBox(height: 24),
@@ -70,34 +94,39 @@ class ProfileScreen extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: const CircleAvatar(
+              child: CircleAvatar(
                 radius: 60,
-                backgroundColor: Color(0xFFE2E8F0),
-                backgroundImage: NetworkImage(
-                  'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                ),
+                backgroundColor: const Color(0xFFE2E8F0),
+                backgroundImage: _profileImage != null
+                    ? FileImage(_profileImage!) as ImageProvider
+                    : const NetworkImage(
+                        'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                      ),
               ),
             ),
             Positioned(
               right: 4,
               bottom: 4,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(
-                  color: ClassTrackTheme.primaryBlue,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.edit_rounded,
-                  color: Colors.white,
-                  size: 16,
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: ClassTrackTheme.primaryBlue,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.edit_rounded,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
             ),
@@ -146,129 +175,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAttendanceCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Attendance Overview',
-                style: GoogleFonts.lexend(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0FDF4),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'ON TRACK',
-                  style: GoogleFonts.lexend(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF22C55E),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          CircularPercentIndicator(
-            radius: 80.0,
-            lineWidth: 12.0,
-            percent: 0.88,
-            center: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  "88%",
-                  style: GoogleFonts.lexend(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF0F172A),
-                  ),
-                ),
-                Text(
-                  "ATTENDANCE",
-                  style: GoogleFonts.lexend(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF94A3B8),
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-            circularStrokeCap: CircularStrokeCap.round,
-            backgroundColor: const Color(0xFFF1F5F9),
-            progressColor: ClassTrackTheme.primaryBlue,
-            animation: true,
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildStatItem('TOTAL CLASSES', '142'),
-              Container(width: 1, height: 40, color: const Color(0xFFF1F5F9)),
-              _buildStatItem(
-                'PRESENT',
-                '125',
-                color: ClassTrackTheme.primaryBlue,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, {Color? color}) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.lexend(
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF94A3B8),
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: GoogleFonts.lexend(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            color: color ?? const Color(0xFF0F172A),
           ),
         ),
       ],
