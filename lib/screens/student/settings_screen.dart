@@ -95,8 +95,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (!status.isGranted) {
           String message = 'Permission denied';
-          if (key == 'push_notifications')
+          if (key == 'push_notifications') {
             message = 'Notification permission denied';
+          }
           if (key == 'location_access') message = 'Location permission denied';
 
           SnackBarAction? action;
@@ -122,8 +123,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(key, value);
+
+    if (!mounted) return;
+
     setState(() {
-      if (key == 'dark_mode') _darkMode = value;
       if (key == 'push_notifications') _pushNotifications = value;
       if (key == 'biometric_login') _biometricLogin = value;
       if (key == 'location_access') _locationAccess = value;
