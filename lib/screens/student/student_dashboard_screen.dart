@@ -3,6 +3,7 @@ import 'package:classtrack/theme/design_theme.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 
@@ -25,9 +26,33 @@ class StudentDashboardScreen extends StatefulWidget {
 
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   int _selectedIndex = 0;
+  List<dynamic> _activeSessions = [];
+  bool _isLoading = true;
 
-  final List<Widget> _pages = [
-    const _DashboardHome(),
+  @override
+  void initState() {
+    super.initState();
+    _fetchActiveSessions();
+  }
+
+  Future<void> _fetchActiveSessions() async {
+    try {
+      final api = ApiService();
+      final response = await api.dio.get(api.v1('/sessions/active'));
+      setState(() {
+        _activeSessions = response.data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetching active sessions: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  List<Widget> _pages() => [
+    _DashboardHome(activeSessions: _activeSessions, isLoading: _isLoading, onRefresh: _fetchActiveSessions),
     const ScheduleScreen(),
     const AttendanceHistoryScreen(),
     const ProfileScreen(),
@@ -47,7 +72,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFFAFAFA),
-        body: IndexedStack(index: _selectedIndex, children: _pages),
+        body: IndexedStack(index: _selectedIndex, children: _pages()),
         bottomNavigationBar: _buildBottomNavigationBar(),
         floatingActionButton: Container(
           height: 64,
@@ -66,13 +91,18 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const QRScannerScreen(),
+                    builder: (context) => QRScannerScreen(
+                      sessionId: _activeSessions.isNotEmpty ? _activeSessions[0]['id'] : null,
+                    ),
                   ),
                 );
+                if (result == true) {
+                  _fetchActiveSessions();
+                }
               },
               borderRadius: BorderRadius.circular(32),
               child: const Icon(
@@ -165,7 +195,15 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 }
 
 class _DashboardHome extends StatelessWidget {
-  const _DashboardHome();
+  final List<dynamic> activeSessions;
+  final bool isLoading;
+  final Future<void> Function() onRefresh;
+
+  const _DashboardHome({
+    required this.activeSessions,
+    required this.isLoading,
+    required this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -185,36 +223,49 @@ class _DashboardHome extends StatelessWidget {
     }
 
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DashboardHeader(date: dateStr, greeting: '$greeting, Nathnael'),
-            const SizedBox(height: 24),
-            const AttendanceStatusCard(
-              percent: 0.85,
-              status: 'Great Standing',
-              message: 'You missed only 2 classes this month.',
-            ),
-            const SizedBox(height: 24),
-            NextClassHeroCard(
-              title: 'Advanced Mathematics',
-              time: '10:00 AM',
-              location: 'Room 402',
-              geofenceStatus: 'Inside Campus Geofence',
-              onViewMap: () {
-                // TODO: Implement View Map
-              },
-            ),
-            const SizedBox(height: 24),
-            _buildScanButton(context),
-            const SizedBox(height: 32),
-            _buildUpcomingClassesHeader(),
-            const SizedBox(height: 16),
-            _buildClassList(),
-            const SizedBox(height: 80), // Spacing for bottom nav
-          ],
+      child: RefreshIndicator(
+        onRefresh: onRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DashboardHeader(date: dateStr, greeting: '$greeting, Student'),
+              const SizedBox(height: 24),
+              const AttendanceStatusCard(
+                percent: 0.85,
+                status: 'Great Standing',
+                message: 'You missed only 2 classes this month.',
+              ),
+              const SizedBox(height: 24),
+              if (isLoading)
+                const Center(child: CircularProgressIndicator())
+              else if (activeSessions.isNotEmpty)
+                NextClassHeroCard(
+                  title: activeSessions[0]['course_name'] ?? 'Active Session',
+                  time: 'NOW',
+                  location: activeSessions[0]['room'] ?? 'N/A',
+                  geofenceStatus: 'Ongoing Session',
+                  onViewMap: () {},
+                )
+              else
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('No active classes right now.'),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              _buildScanButton(context),
+              // ... rest of the children (Upcoming Classes logic could also be updated but let's keep it simple)
+              const SizedBox(height: 32),
+              _buildUpcomingClassesHeader(),
+              const SizedBox(height: 16),
+              _buildClassList(),
+              const SizedBox(height: 80),
+            ],
+          ),
         ),
       ),
     );
