@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
+import '../../api_service.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated }
 
@@ -40,6 +42,7 @@ class AuthState {
 
 class AuthCubit extends Cubit<AuthState> {
   final SharedPreferences prefs;
+  final ApiService api = ApiService();
 
   AuthCubit({required this.prefs}) : super(AuthState.initial()) {
     checkAuthStatus();
@@ -48,20 +51,27 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> checkAuthStatus() async {
     emit(state.copyWith(status: AuthStatus.loading));
     try {
-      final isAuthenticated = prefs.getBool('is_logged_in') ?? false;
-      final userRole = UserRole.student;
+      final token = await api.getToken();
+      if (token == null) {
+        emit(state.copyWith(status: AuthStatus.unauthenticated, isAuthenticated: false));
+        return;
+      }
+
+      // Verify token by getting user info
+      final response = await api.dio.get(api.v1('/users/me'));
+      final roleStr = response.data['role'];
+      final userRole = roleStr == 'lecturer' ? UserRole.lecturer : UserRole.student;
 
       emit(
         state.copyWith(
-          status: isAuthenticated
-              ? AuthStatus.authenticated
-              : AuthStatus.unauthenticated,
-          isAuthenticated: isAuthenticated,
+          status: AuthStatus.authenticated,
+          isAuthenticated: true,
           userRole: userRole,
         ),
       );
     } catch (e) {
       debugPrint('Auth Status Check Error: $e');
+      await api.deleteToken();
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
@@ -74,36 +84,44 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login(String email, String password, UserRole role) async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
     try {
-      // Mock login delay
-      await Future.delayed(const Duration(seconds: 1));
+      final formData = FormData.fromMap({
+        'username': email,
+        'password': password,
+      });
 
-      // Simple validation for demonstration
-      if (email.contains('@') && password.length >= 6) {
-        await prefs.setBool('is_logged_in', true);
-        await prefs.setString('user_role', role.name);
-        emit(
-          state.copyWith(
-            status: AuthStatus.authenticated,
-            isAuthenticated: true,
-            userRole: role,
-          ),
-        );
-      } else {
-        emit(
-          state.copyWith(
-            status: AuthStatus.unauthenticated,
-            isAuthenticated: false,
-            error: 'Invalid email or password',
-          ),
-        );
-      }
+      final response = await api.dio.post(
+        '/api/v1/auth/token',
+        data: formData,
+      );
+
+      final token = response.data['access_token'];
+      await api.saveToken(token);
+      
+      // Get user info to confirm role
+      final userResponse = await api.dio.get(api.v1('/users/me'));
+      final roleStr = userResponse.data['role'];
+      final userRole = roleStr == 'lecturer' ? UserRole.lecturer : UserRole.student;
+
+      await prefs.setBool('is_logged_in', true);
+      
+      emit(
+        state.copyWith(
+          status: AuthStatus.authenticated,
+          isAuthenticated: true,
+          userRole: userRole,
+        ),
+      );
     } catch (e) {
       debugPrint('Login Error: $e');
+      String errorMessage = 'Login failed';
+      if (e is DioException) {
+        errorMessage = e.response?.data['detail'] ?? 'Invalid credentials';
+      }
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
           isAuthenticated: false,
-          error: 'An error occurred during login: $e',
+          error: errorMessage,
         ),
       );
     }
@@ -112,8 +130,8 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> logout() async {
     emit(state.copyWith(status: AuthStatus.loading));
     try {
+      await api.deleteToken();
       await prefs.setBool('is_logged_in', false);
-      await prefs.remove('user_role');
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
@@ -124,7 +142,6 @@ class AuthCubit extends Cubit<AuthState> {
       );
     } catch (e) {
       debugPrint('Logout Error: $e');
-      // Still set to unauthenticated on error for safety
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
