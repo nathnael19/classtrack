@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:classtrack/theme/design_theme.dart';
+import 'package:classtrack/logic/api_service.dart';
+import 'package:dio/dio.dart';
 
 class QRScannerScreen extends StatefulWidget {
-  const QRScannerScreen({super.key});
+  final int? sessionId;
+  const QRScannerScreen({super.key, this.sessionId});
 
   @override
   State<QRScannerScreen> createState() => _QRScannerScreenState();
@@ -15,6 +18,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   late MobileScannerController controller;
   late AnimationController _animationController;
   late Animation<double> _animation;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -49,16 +53,22 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           MobileScanner(
             controller: controller,
             onDetect: (capture) {
+              if (_isProcessing) return;
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
-                debugPrint('Barcode found! ${barcode.rawValue}');
-                // TODO: Handle successful scan
                 if (barcode.rawValue != null) {
                   _onScanSuccess(barcode.rawValue!);
                 }
               }
             },
           ),
+
+          if (_isProcessing)
+            const Center(
+              child: CircularProgressIndicator(
+                color: ClassTrackTheme.primaryBlue,
+              ),
+            ),
 
           // Dark Overlay with Cutout
           const QRScannerOverlay(
@@ -247,22 +257,60 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     );
   }
 
-  void _onScanSuccess(String code) {
-    // Prevent multiple scans
-    controller.stop();
-
-    // Show success feedback
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Attendance Marked for: $code'),
-        backgroundColor: const Color(0xFF10B981),
-      ),
-    );
-
-    // Navigate back
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) Navigator.pop(context);
+  Future<void> _onScanSuccess(String code) async {
+    setState(() {
+      _isProcessing = true;
     });
+
+    try {
+      final api = ApiService();
+
+      if (widget.sessionId == null) {
+        throw Exception("No active session selected to mark attendance.");
+      }
+
+      await api.dio.post(
+        api.v1('/attendance/mark'),
+        data: {
+          'session_id': widget.sessionId,
+          'qr_code_content': code,
+          'latitude': 0.0, // Mock location
+          'longitude': 0.0,
+        },
+      );
+
+      controller.stop();
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Attendance Marked Successfully!'),
+          backgroundColor: Color(0xFF10B981),
+        ),
+      );
+
+      Future.delayed(const Duration(seconds: 1), () {
+        if (mounted) Navigator.pop(context, true);
+      });
+    } catch (e) {
+      debugPrint('Attendance Marking Error: $e');
+      String errorMsg = 'Failed to mark attendance';
+      if (e is DioException) {
+        errorMsg = e.response?.data['detail'] ?? errorMsg;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMsg),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+
+      setState(() {
+        _isProcessing = false;
+      });
+    }
   }
 }
 
