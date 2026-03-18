@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../theme/design_theme.dart';
 import 'components/history_filter_dropdowns.dart';
 import 'components/history_stats_card.dart';
@@ -50,40 +49,42 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
       builder: (context, child) {
+        final theme = Theme.of(context);
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
               primary: ClassTrackTheme.primaryBlue,
               onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: const Color(0xFF0F172A),
+              surface: isDark ? const Color(0xFF1E293B) : Colors.white,
+              onSurface: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
             datePickerTheme: DatePickerThemeData(
               headerBackgroundColor: ClassTrackTheme.primaryBlue,
               headerForegroundColor: Colors.white,
-              backgroundColor: Colors.white,
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),
-              dayStyle: GoogleFonts.lexend(fontWeight: FontWeight.w500),
-              weekdayStyle: GoogleFonts.lexend(
+              dayStyle: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              weekdayStyle: theme.textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF64748B),
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
               ),
-              yearStyle: GoogleFonts.lexend(),
-              headerHeadlineStyle: GoogleFonts.lexend(
+              yearStyle: theme.textTheme.bodyMedium,
+              headerHeadlineStyle: theme.textTheme.headlineSmall?.copyWith(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
               ),
-              headerHelpStyle: GoogleFonts.lexend(
+              headerHelpStyle: theme.textTheme.labelMedium?.copyWith(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -102,8 +103,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(
         child: Column(
           children: [
@@ -153,10 +156,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       children: [
                         Text(
                           'Recent Sessions',
-                          style: GoogleFonts.lexend(
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF0F172A),
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         if (_selectedDate != null)
@@ -165,9 +167,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                 setState(() => _selectedDate = null),
                             child: Text(
                               'Clear Date',
-                              style: GoogleFonts.lexend(
+                              style: theme.textTheme.labelLarge?.copyWith(
                                 color: ClassTrackTheme.primaryBlue,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w900,
                               ),
                             ),
                           ),
@@ -182,7 +184,9 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 32.0),
                           child: Text(
                             'No attendance history found.',
-                            style: GoogleFonts.lexend(color: const Color(0xFF64748B)),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                            ),
                           ),
                         ),
                       )
@@ -195,7 +199,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                             if (ts.year != _selectedDate!.year || ts.month != _selectedDate!.month || ts.day != _selectedDate!.day) return false;
                           }
                           return true;
-                        }).map((record) {
+                        }).map<Widget>((record) {
                           final timestamp = DateTime.parse(record['timestamp']).toLocal();
                           final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
                           Color statusColor;
@@ -231,21 +235,27 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: Text(
-              'Attendance History',
-              style: GoogleFonts.lexend(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF0F172A),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
               ),
-            ),
+              const SizedBox(width: 4),
+              Text(
+                'Attendance History',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
           IconButton(
             onPressed: () => _selectDate(context),
@@ -254,7 +264,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               size: 20,
               color: _selectedDate != null
                   ? ClassTrackTheme.primaryBlue
-                  : const Color(0xFF0F172A),
+                  : theme.iconTheme.color?.withValues(alpha: 0.6),
             ),
           ),
         ],
