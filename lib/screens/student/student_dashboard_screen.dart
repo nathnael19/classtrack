@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
+import 'package:classtrack/logic/cubits/attendance/attendance_cubit.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 
 // Import modular widgets
@@ -25,95 +25,19 @@ class StudentDashboardScreen extends StatefulWidget {
 
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   int _selectedIndex = 0;
-  List<dynamic> _activeSessions = [];
-  List<dynamic> _upcomingSessions = [];
-  Map<String, dynamic>? _userData;
-  Map<String, dynamic>? _attendanceSummary;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchDashboardData();
-  }
-
-  Future<void> _fetchDashboardData() async {
-    setState(() => _isLoading = true);
-    await Future.wait([
-      _fetchActiveSessions(),
-      _fetchUpcomingSessions(),
-      _fetchUserProfile(),
-      _fetchAttendanceSummary(),
-    ]);
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _fetchAttendanceSummary() async {
-    try {
-      final api = ApiService();
-      final response = await api.getAttendanceSummary();
-      if (mounted) {
-        setState(() {
-          _attendanceSummary = response;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching attendance summary: $e');
-    }
-  }
-
-  Future<void> _fetchUpcomingSessions() async {
-    try {
-      final api = ApiService();
-      final response = await api.getUpcomingSessions();
-      if (mounted) {
-        setState(() {
-          _upcomingSessions = response;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching upcoming sessions: $e');
-    }
-  }
-
-  Future<void> _fetchUserProfile() async {
-    try {
-      final api = ApiService();
-      final response = await api.getCurrentUser();
-      if (mounted) {
-        setState(() {
-          _userData = response;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching user profile: $e');
-    }
-  }
-
-  Future<void> _fetchActiveSessions() async {
-    try {
-      final api = ApiService();
-      final response = await api.dio.get(api.v1('/sessions/active'));
-      if (mounted) {
-        setState(() {
-          _activeSessions = response.data;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching active sessions: $e');
-    }
-  }
 
   List<Widget> _pages() => [
-    _DashboardHome(
-      activeSessions: _activeSessions,
-      upcomingSessions: _upcomingSessions,
-      userData: _userData,
-      attendanceSummary: _attendanceSummary,
-      isLoading: _isLoading,
-      onRefresh: _fetchDashboardData,
+    BlocBuilder<AttendanceCubit, AttendanceState>(
+      builder: (context, state) {
+        return _DashboardHome(
+          activeSessions: state.activeSessions,
+          upcomingSessions: state.upcomingSessions,
+          userData: state.userData,
+          attendanceSummary: state.summary,
+          isLoading: state.status == AttendanceStatus.loading,
+          onRefresh: () => context.read<AttendanceCubit>().refresh(),
+        );
+      },
     ),
     const ScheduleScreen(),
     const AttendanceHistoryScreen(),
@@ -122,7 +46,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.unauthenticated) {
@@ -136,44 +59,50 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       child: Scaffold(
         body: IndexedStack(index: _selectedIndex, children: _pages()),
         bottomNavigationBar: _buildBottomNavigationBar(),
-        floatingActionButton: Container(
-          height: 64,
-          width: 64,
-          decoration: BoxDecoration(
-            color: ClassTrackTheme.primaryBlue,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QRScannerScreen(
-                      sessionId: _activeSessions.isNotEmpty ? _activeSessions[0]['id'] : null,
-                    ),
+        floatingActionButton: BlocBuilder<AttendanceCubit, AttendanceState>(
+          builder: (context, state) {
+            return Container(
+              height: 64,
+              width: 64,
+              decoration: BoxDecoration(
+                color: ClassTrackTheme.primaryBlue,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
                   ),
-                );
-                if (result == true) {
-                  _fetchActiveSessions();
-                }
-              },
-              borderRadius: BorderRadius.circular(32),
-              child: const Icon(
-                Icons.qr_code_scanner_rounded,
-                color: Colors.white,
-                size: 32,
+                ],
               ),
-            ),
-          ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QRScannerScreen(
+                          sessionId: state.activeSessions.isNotEmpty ? state.activeSessions[0]['id'] : null,
+                        ),
+                      ),
+                    );
+                    if (result == true) {
+                      if (context.mounted) {
+                        context.read<AttendanceCubit>().refresh();
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(32),
+                  child: const Icon(
+                    Icons.qr_code_scanner_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
@@ -337,6 +266,7 @@ class _DashboardHome extends StatelessWidget {
                 time: 'NOW',
                 location: activeSessions[0]['room'] ?? 'N/A',
                 geofenceStatus: 'Ongoing Session',
+                isPresent: activeSessions[0]['is_present'] ?? false,
                 onViewMap: () {},
               )
             else
