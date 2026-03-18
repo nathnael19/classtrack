@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
@@ -63,22 +62,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           child: Column(
             children: [
-              _buildAppBar(context),
-              const SizedBox(height: 32),
+              _buildAppBar(context, theme, isDark),
+              const SizedBox(height: 40),
               _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : _buildProfileHeader(),
+                  : _buildProfileHeader(theme, isDark),
+              const SizedBox(height: 40),
+              _buildSettingsSection(context, theme, isDark),
               const SizedBox(height: 32),
-              _buildSettingsSection(context),
-              const SizedBox(height: 24),
-              _buildLogoutButton(context),
+              _buildLogoutButton(context, theme, isDark),
               const SizedBox(height: 40),
             ],
           ),
@@ -87,45 +88,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context, ThemeData theme, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           'Student Profile',
-          style: GoogleFonts.lexend(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
           ),
         ),
-        Row(
-          children: [
-            IconButton(
-              onPressed: () async {
-                if (_userData != null) {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          EditProfileScreen(userData: _userData!),
-                    ),
-                  );
-                  if (result == true) {
-                    _fetchProfile();
-                  }
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: IconButton(
+            onPressed: () async {
+              if (_userData != null) {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        EditProfileScreen(userData: _userData!),
+                  ),
+                );
+                if (result == true) {
+                  _fetchProfile();
                 }
-              },
-              icon: const Icon(Icons.edit_outlined),
-              color: const Color(0xFF0F172A),
-            ),
-          ],
+              }
+            },
+            icon: const Icon(Icons.edit_rounded, size: 20),
+            color: ClassTrackTheme.primaryBlue,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(ThemeData theme, bool isDark) {
     return Column(
       children: [
         Stack(
@@ -135,13 +137,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-                  width: 2,
+                  color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
+                  width: 3,
                 ),
               ),
               child: CircleAvatar(
-                radius: 60,
-                backgroundColor: const Color(0xFFE2E8F0),
+                radius: 65,
+                backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                 backgroundImage: _profileImage != null
                     ? FileImage(_profileImage!) as ImageProvider
                     : const NetworkImage(
@@ -150,72 +152,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             Positioned(
-              right: 4,
-              bottom: 4,
+              right: 2,
+              bottom: 2,
               child: GestureDetector(
                 onTap: _pickImage,
                 child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
                     color: ClassTrackTheme.primaryBlue,
                     shape: BoxShape.circle,
+                    border: Border.all(color: theme.scaffoldBackgroundColor, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
+                        color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.edit_rounded,
+                    Icons.camera_alt_rounded,
                     color: Colors.white,
-                    size: 16,
+                    size: 18,
                   ),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 24),
         Text(
           _userData?['name'] ?? 'Student',
-          style: GoogleFonts.lexend(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
         Text(
-          _userData?['student_id'] ?? 'N/A',
-          style: GoogleFonts.lexend(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: const Color(0xFF64748B),
+          'ID: ${_userData?['student_id'] ?? 'N/A'}',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF2FF),
-            borderRadius: BorderRadius.circular(24),
+            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.school_outlined,
-                size: 16,
+                Icons.school_rounded,
+                size: 18,
                 color: ClassTrackTheme.primaryBlue,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
                 _userData?['department_name'] ?? 'Not Assigned',
-                style: GoogleFonts.lexend(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
                   color: ClassTrackTheme.primaryBlue,
                 ),
               ),
@@ -226,26 +226,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext context) {
+  Widget _buildSettingsSection(BuildContext context, ThemeData theme, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 16),
+          padding: const EdgeInsets.only(left: 4, bottom: 20),
           child: Text(
-            'SETTINGS & SECURITY',
-            style: GoogleFonts.lexend(
+            'ACCOUNT SETTINGS',
+            style: theme.textTheme.labelLarge?.copyWith(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF94A3B8),
-              letterSpacing: 1,
+              fontWeight: FontWeight.w900,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              letterSpacing: 2,
             ),
           ),
         ),
         _buildSettingsItem(
-          icon: Icons.settings_outlined,
+          theme: theme,
+          isDark: isDark,
+          icon: Icons.settings_rounded,
           iconColor: const Color(0xFF64748B),
-          title: 'Settings',
+          title: 'App Settings',
           onTap: () {
             Navigator.push(
               context,
@@ -253,11 +255,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             );
           },
         ),
+        _buildSettingsItem(
+          theme: theme,
+          isDark: isDark,
+          icon: Icons.lock_person_rounded,
+          iconColor: const Color(0xFF6366F1),
+          title: 'Security & Password',
+          onTap: () {
+             // Handle security navigation
+          },
+        ),
+        _buildSettingsItem(
+          theme: theme,
+          isDark: isDark,
+          icon: Icons.help_outline_rounded,
+          iconColor: const Color(0xFF10B981),
+          title: 'Help & Support',
+          onTap: () {},
+        ),
       ],
     );
   }
 
   Widget _buildSettingsItem({
+    required ThemeData theme,
+    required bool isDark,
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -265,28 +287,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     VoidCallback? onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF8FAFC)),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+        ),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         leading: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: iconColor, size: 20),
+          child: Icon(icon, color: iconColor, size: 22),
         ),
         title: Text(
           title,
-          style: GoogleFonts.lexend(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF334155),
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
         ),
         trailing: Row(
@@ -295,16 +324,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (trailingText != null)
               Text(
                 trailingText,
-                style: GoogleFonts.lexend(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF94A3B8),
                 ),
               ),
             const SizedBox(width: 8),
             const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 14,
+              Icons.chevron_right_rounded,
+              size: 20,
               color: Color(0xFFCBD5E1),
             ),
           ],
@@ -314,18 +342,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context) {
+  Widget _buildLogoutButton(BuildContext context, ThemeData theme, bool isDark) {
     return SizedBox(
       width: double.infinity,
       height: 60,
       child: OutlinedButton(
         onPressed: () => context.read<AuthCubit>().logout(),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFF1F5F9), width: 1),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.2), 
+            width: 1.5,
           ),
-          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: isDark ? const Color(0xFFEF4444).withValues(alpha: 0.05) : Colors.white,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -333,14 +364,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Icon(
               Icons.logout_rounded,
               color: Color(0xFFEF4444),
-              size: 20,
+              size: 22,
             ),
             const SizedBox(width: 12),
             Text(
-              'Logout',
-              style: GoogleFonts.lexend(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              'Logout Account',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
                 color: const Color(0xFFEF4444),
               ),
             ),
