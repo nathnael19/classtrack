@@ -4,7 +4,8 @@ import 'components/history_filter_dropdowns.dart';
 import 'components/history_stats_card.dart';
 import 'components/history_session_item.dart';
 import 'package:intl/intl.dart';
-import '../../logic/api_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../logic/cubits/attendance/attendance_cubit.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -18,35 +19,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   String _selectedCourse = 'All Courses';
   String _selectedPeriod = 'This Month';
   DateTime? _selectedDate;
-  List<dynamic> _history = [];
-  Map<String, dynamic>? _summary;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchHistory();
-  }
-
-  Future<void> _fetchHistory() async {
-    try {
-      final api = ApiService();
-      final results = await Future.wait([
-        api.getAttendanceHistory(),
-        api.getAttendanceSummary(),
-      ]);
-      if (mounted) {
-        setState(() {
-          _history = results[0] as List<dynamic>;
-          _summary = results[1] as Map<String, dynamic>;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error fetching history: $e');
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
 
   Future<void> _selectDate(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -96,7 +68,6 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
       setState(() {
         _selectedDate = picked;
       });
-      // TODO: Filter history list based on selected date
       debugPrint('Selected date: ${picked.toString()}');
     }
   }
@@ -106,131 +77,144 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    HistoryFilterDropdowns(
-                      selectedCourse: _selectedCourse,
-                      selectedPeriod: _selectedPeriod,
-                      courses: ['All Courses', ..._history.map((e) => e['course_name'] as String).toSet()],
-                      periods: const [
-                        'This Month',
-                        'Last Month',
-                        'This Semester',
-                      ],
-                      onCourseChanged: (val) =>
-                          setState(() => _selectedCourse = val!),
-                      onPeriodChanged: (val) =>
-                          setState(() => _selectedPeriod = val!),
-                    ),
-                    const SizedBox(height: 24),
-                    HistoryStatsCard(
-                      averagePercentage: _summary != null
-                          ? '${(_summary!['percent'] * 100).toInt()}%'
-                          : '--%',
-                      improvementText: 'Total classes: ${_summary?['total_classes'] ?? 0}',
-                      chartPoints: _summary != null && _summary!['weekly_stats'] != null
-                          ? (_summary!['weekly_stats'] as List).asMap().entries.map((e) {
-                              return Offset(e.key / 4.0, 1.0 - (e.value as double));
-                            }).toList()
-                          : const [
-                              Offset(0, 1.0),
-                              Offset(0.25, 1.0),
-                              Offset(0.5, 1.0),
-                              Offset(0.75, 1.0),
-                              Offset(1.0, 1.0),
-                            ],
-                    ),
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Recent Sessions',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        if (_selectedDate != null)
-                          TextButton(
-                            onPressed: () =>
-                                setState(() => _selectedDate = null),
-                            child: Text(
-                              'Clear Date',
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: ClassTrackTheme.primaryBlue,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator())
-                    else if (_history.isEmpty)
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 32.0),
-                          child: Text(
-                            'No attendance history found.',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: _history.where((record) {
-                          if (_selectedCourse != 'All Courses' && record['course_name'] != _selectedCourse) return false;
-                          if (_selectedDate != null) {
-                            final ts = DateTime.parse(record['timestamp']).toLocal();
-                            if (ts.year != _selectedDate!.year || ts.month != _selectedDate!.month || ts.day != _selectedDate!.day) return false;
-                          }
-                          return true;
-                        }).map<Widget>((record) {
-                          final timestamp = DateTime.parse(record['timestamp']).toLocal();
-                          final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
-                          Color statusColor;
-                          switch (status) {
-                            case 'PRESENT':
-                              statusColor = const Color(0xFF22C55E);
-                              break;
-                            case 'LATE':
-                              statusColor = const Color(0xFFF97316);
-                              break;
-                            default:
-                              statusColor = const Color(0xFFEF4444);
-                          }
+    return BlocBuilder<AttendanceCubit, AttendanceState>(
+      builder: (context, state) {
+        final history = state.history;
+        final summary = state.summary;
+        final isLoading = state.status == AttendanceStatus.loading;
 
-                          return HistorySessionItem(
-                            course: record['course_name'] ?? 'Unknown Course',
-                            dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
-                            status: status,
-                            icon: Icons.class_outlined,
-                            statusColor: statusColor,
-                          );
-                        }).toList(),
+        return Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () => context.read<AttendanceCubit>().refresh(),
+                    color: ClassTrackTheme.primaryBlue,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24),
+                          HistoryFilterDropdowns(
+                            selectedCourse: _selectedCourse,
+                            selectedPeriod: _selectedPeriod,
+                            courses: ['All Courses', ...history.map((e) => e['course_name'] as String).toSet()],
+                            periods: const [
+                              'This Month',
+                              'Last Month',
+                              'This Semester',
+                            ],
+                            onCourseChanged: (val) =>
+                                setState(() => _selectedCourse = val!),
+                            onPeriodChanged: (val) =>
+                                setState(() => _selectedPeriod = val!),
+                          ),
+                          const SizedBox(height: 24),
+                          HistoryStatsCard(
+                            averagePercentage: summary != null
+                                ? '${(summary['percent'] * 100).toInt()}%'
+                                : '--%',
+                            improvementText: 'Total classes: ${summary?['total_classes'] ?? 0}',
+                            chartPoints: summary != null && summary['weekly_stats'] != null
+                                ? (summary['weekly_stats'] as List).asMap().entries.map((e) {
+                                    return Offset(e.key / 4.0, 1.0 - (e.value as double));
+                                  }).toList()
+                                : const [
+                                    Offset(0, 1.0),
+                                    Offset(0.25, 1.0),
+                                    Offset(0.5, 1.0),
+                                    Offset(0.75, 1.0),
+                                    Offset(1.0, 1.0),
+                                  ],
+                          ),
+                          const SizedBox(height: 32),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Recent Sessions',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              if (_selectedDate != null)
+                                TextButton(
+                                  onPressed: () =>
+                                      setState(() => _selectedDate = null),
+                                  child: Text(
+                                    'Clear Date',
+                                    style: theme.textTheme.labelLarge?.copyWith(
+                                      color: ClassTrackTheme.primaryBlue,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          if (isLoading)
+                            const Center(child: CircularProgressIndicator())
+                          else if (history.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 32.0),
+                                child: Text(
+                                  'No attendance history found.',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Column(
+                              children: history.where((record) {
+                                if (_selectedCourse != 'All Courses' && record['course_name'] != _selectedCourse) return false;
+                                if (_selectedDate != null) {
+                                  final ts = DateTime.parse(record['timestamp']).toLocal();
+                                  if (ts.year != _selectedDate!.year || ts.month != _selectedDate!.month || ts.day != _selectedDate!.day) return false;
+                                }
+                                return true;
+                              }).map<Widget>((record) {
+                                final timestamp = DateTime.parse(record['timestamp']).toLocal();
+                                final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
+                                Color statusColor;
+                                switch (status) {
+                                  case 'PRESENT':
+                                    statusColor = const Color(0xFF22C55E);
+                                    break;
+                                  case 'LATE':
+                                    statusColor = const Color(0xFFF97316);
+                                    break;
+                                  default:
+                                    statusColor = const Color(0xFFEF4444);
+                                }
+
+                                return HistorySessionItem(
+                                  course: record['course_name'] ?? 'Unknown Course',
+                                  dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
+                                  status: status,
+                                  icon: Icons.class_outlined,
+                                  statusColor: statusColor,
+                                );
+                              }).toList(),
+                            ),
+                          const SizedBox(height: 24),
+                        ],
                       ),
-                    const SizedBox(height: 24),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
