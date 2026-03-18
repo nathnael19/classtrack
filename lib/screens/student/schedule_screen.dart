@@ -36,10 +36,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _fetchSessions() async {
     setState(() => _isLoading = true);
     try {
-      final upcoming = await _api.getUpcomingSessions();
+      final monday = DateTime.parse(_days[0]['fullDate']!);
+      final sunday = DateTime.parse(_days[6]['fullDate']!).add(const Duration(hours: 23, minutes: 59));
+      
+      final sessions = await _api.getSessions(
+        startDate: monday,
+        endDate: sunday,
+      );
+      
       if (mounted) {
         setState(() {
-          _sessions = upcoming;
+          _sessions = sessions;
           _isLoading = false;
         });
       }
@@ -282,8 +289,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         child: ClassCard(
           title: session['topic'] ?? 'Untitled Session',
           time: '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)}',
-          location: 'Room ${session['course_id']}', // Ideally we'd have a room field
-          lecturer: 'Lecturer ID: ${session['lecturer_id'] ?? 'N/A'}',
+          location: session['room'] ?? 'N/A',
+          lecturer: session['lecturer_name'] ?? 'N/A',
           status: now.isAfter(endTime) ? ClassStatus.completed : ClassStatus.upcoming,
           isHighlighted: timelineStatus == TimelineStatus.active,
         ),
