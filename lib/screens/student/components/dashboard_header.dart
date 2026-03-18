@@ -1,5 +1,5 @@
+import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class DashboardHeader extends StatelessWidget {
   final String date;
@@ -15,6 +15,9 @@ class DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -23,19 +26,20 @@ class DashboardHeader extends StatelessWidget {
           children: [
             Text(
               date,
-              style: GoogleFonts.lexend(
-                fontSize: 14,
-                color: const Color(0xFF64748B),
-                fontWeight: FontWeight.w500,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: isDark
+                    ? const Color(0xFF94A3B8)
+                    : const Color(0xFF64748B),
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
               greeting,
-              style: GoogleFonts.lexend(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF0F172A),
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
               ),
             ),
           ],
@@ -43,12 +47,21 @@ class DashboardHeader extends StatelessWidget {
         Stack(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFFFE4C4),
-                border: Border.all(color: Colors.white, width: 2),
+                color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : Colors.white,
+                  width: 3,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                  ),
+                ],
               ),
               child: ClipOval(
                 child: Image.network(
@@ -57,12 +70,12 @@ class DashboardHeader extends StatelessWidget {
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(
-                      color: const Color(0xFFFFE4C4),
+                      color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
                       alignment: Alignment.center,
                       child: const Icon(
                         Icons.person,
-                        color: Color(0xFF64748B),
-                        size: 24,
+                        color: ClassTrackTheme.primaryBlue,
+                        size: 26,
                       ),
                     );
                   },
@@ -73,12 +86,15 @@ class DashboardHeader extends StatelessWidget {
               right: 2,
               bottom: 2,
               child: Container(
-                width: 12,
-                height: 12,
+                width: 14,
+                height: 14,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E),
+                  color: const Color(0xFF22C55E), // Online Green
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(
+                    color: isDark ? const Color(0xFF0F172B) : Colors.white,
+                    width: 2.5,
+                  ),
                 ),
               ),
             ),
