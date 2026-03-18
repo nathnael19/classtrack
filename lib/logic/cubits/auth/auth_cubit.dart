@@ -52,18 +52,14 @@ class AuthCubit extends Cubit<AuthState> {
     debugPrint('AuthCubit: Checking auth status...');
     emit(state.copyWith(status: AuthStatus.loading));
     try {
-      // Add a timeout to prevent hanging on Web if storage is slow
-      final token = await api.getToken().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          debugPrint('AuthCubit: Token check timed out');
-          return null;
-        },
-      );
+      final token = await api.getToken();
 
       if (token == null) {
         debugPrint('AuthCubit: No token found, unauthenticated');
-        emit(state.copyWith(status: AuthStatus.unauthenticated, isAuthenticated: false));
+        emit(state.copyWith(
+          status: AuthStatus.unauthenticated,
+          isAuthenticated: false,
+        ));
         return;
       }
 
@@ -71,9 +67,11 @@ class AuthCubit extends Cubit<AuthState> {
       // Verify token by getting user info
       final response = await api.dio.get(api.v1('/users/me'));
       final roleStr = response.data['role'];
-      final userRole = roleStr == 'lecturer' ? UserRole.lecturer : UserRole.student;
+      final userRole =
+          roleStr == 'lecturer' ? UserRole.lecturer : UserRole.student;
 
       debugPrint('AuthCubit: Token verified, role: $roleStr');
+      await prefs.setString('user_role', roleStr);
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
@@ -83,16 +81,46 @@ class AuthCubit extends Cubit<AuthState> {
       );
     } catch (e) {
       debugPrint('AuthCubit: Auth Status Check Error: $e');
+      
       if (e is DioException) {
+        final statusCode = e.response?.statusCode;
+        debugPrint('AuthCubit: Dio Error status code: $statusCode');
         debugPrint('AuthCubit: Dio Error details: ${e.response?.data}');
+        
+        // Only delete token if it's explicitly an auth failure (401 or 403)
+        if (statusCode == 401 || statusCode == 403) {
+          debugPrint('AuthCubit: Invalid token, deleting and logging out');
+          await api.deleteToken();
+          await prefs.remove('user_role');
+          await prefs.setBool('is_logged_in', false);
+          emit(
+            state.copyWith(
+              status: AuthStatus.unauthenticated,
+              isAuthenticated: false,
+            ),
+          );
+          return;
+        }
+        
+        // For network errors or 500s, assume the token might still be valid
+        debugPrint('AuthCubit: Network or server error, retaining token for retry');
+        final savedRole = prefs.getString('user_role');
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            isAuthenticated: true,
+            userRole: savedRole == 'lecturer' ? UserRole.lecturer : UserRole.student, 
+          ),
+        );
+      } else {
+        // Non-dio errors (like storage failure)
+        emit(
+          state.copyWith(
+            status: AuthStatus.unauthenticated,
+            isAuthenticated: false,
+          ),
+        );
       }
-      await api.deleteToken();
-      emit(
-        state.copyWith(
-          status: AuthStatus.unauthenticated,
-          isAuthenticated: false,
-        ),
-      );
     }
   }
 
@@ -124,6 +152,7 @@ class AuthCubit extends Cubit<AuthState> {
 
       debugPrint('AuthCubit: User info fetched, role: $roleStr');
       await prefs.setBool('is_logged_in', true);
+      await prefs.setString('user_role', roleStr);
       
       emit(
         state.copyWith(
@@ -196,6 +225,7 @@ class AuthCubit extends Cubit<AuthState> {
     try {
       await api.deleteToken();
       await prefs.setBool('is_logged_in', false);
+      await prefs.remove('user_role');
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
