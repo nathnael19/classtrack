@@ -65,6 +65,18 @@ class ApiService {
     return response.data;
   }
 
+  Future<List<dynamic>> getSessions({DateTime? startDate, DateTime? endDate}) async {
+    final Map<String, dynamic> queryParameters = {};
+    if (startDate != null) {
+      queryParameters['start_date'] = startDate.toUtc().toIso8601String();
+    }
+    if (endDate != null) {
+      queryParameters['end_date'] = endDate.toUtc().toIso8601String();
+    }
+    final response = await dio.get(v1('/sessions/'), queryParameters: queryParameters);
+    return response.data;
+  }
+
   Future<List<dynamic>> getActiveSessions() async {
     final response = await dio.get(v1('/sessions/active'));
     return response.data;
