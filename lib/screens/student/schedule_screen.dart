@@ -3,6 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/design_theme.dart';
 
+import '../../logic/api_service.dart';
+
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
 
@@ -15,16 +17,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   late int _selectedDayIndex;
   late List<Map<String, String>> _days;
   late DateTime _anchorDate; // The date used to determine which week to show
+  List<dynamic> _sessions = [];
+  bool _isLoading = true;
+  final ApiService _api = ApiService();
 
   @override
   void initState() {
     super.initState();
     _anchorDate = DateTime.now().toUtc().add(const Duration(hours: 3));
     _initializeDynamicDates(_anchorDate);
+    _fetchSessions();
     // Scroll to today's date after the first frame is rendered
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToSelectedDay();
     });
+  }
+
+  Future<void> _fetchSessions() async {
+    setState(() => _isLoading = true);
+    try {
+      final upcoming = await _api.getUpcomingSessions();
+      if (mounted) {
+        setState(() {
+          _sessions = upcoming;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching schedule: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -130,60 +152,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             const SizedBox(height: 24),
             _buildDateSelector(),
             const SizedBox(height: 32),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    _buildTimelineItem(
-                      time: '08:30',
-                      status: TimelineStatus.completed,
-                      child: const ClassCard(
-                        title: 'Physics Lab II',
-                        time: '08:30 AM - 10:00 AM',
-                        location: 'Lab 102',
-                        lecturer: 'Dr. Sarah Chen',
-                        status: ClassStatus.completed,
+                        Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : RefreshIndicator(
+                      onRefresh: _fetchSessions,
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          children: [
+                            if (_sessions.isEmpty)...[
+                              const SizedBox(height: 100),
+                              Center(
+                                child: Text(
+                                  'No sessions scheduled for this week.',
+                                  style: GoogleFonts.lexend(
+                                    color: const Color(0xFF64748B),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ] else
+                              ..._buildTimelineSessions(),
+                            const SizedBox(height: 100), // Space for navigation
+                          ],
+                        ),
                       ),
                     ),
-                    _buildTimelineItem(
-                      time: '10:00',
-                      status: TimelineStatus.active,
-                      child: const ClassCard(
-                        title: 'Advanced Mathematics',
-                        time: '10:00 AM - 11:30 AM',
-                        location: 'Room 402',
-                        lecturer: 'Prof. Marcus Thorne',
-                        status: ClassStatus.upcoming,
-                        isHighlighted: true,
-                      ),
-                    ),
-                    _buildTimelineItem(
-                      time: '13:00',
-                      status: TimelineStatus.upcoming,
-                      child: const ClassCard(
-                        title: 'Software Engineering',
-                        time: '01:00 PM - 02:30 PM',
-                        location: 'Lab 305',
-                        lecturer: 'Dr. Alan Turing',
-                        status: ClassStatus.upcoming,
-                      ),
-                    ),
-                    _buildTimelineItem(
-                      time: '15:30',
-                      status: TimelineStatus.upcoming,
-                      child: const ClassCard(
-                        title: 'Database Systems',
-                        time: '03:30 PM - 05:00 PM',
-                        location: 'Main Hall B',
-                        lecturer: 'Prof. Grace Hopper',
-                        status: ClassStatus.upcoming,
-                      ),
-                    ),
-                    const SizedBox(height: 100), // Space for navigation
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -243,6 +239,56 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         ],
       ),
     );
+  }
+
+    List<Widget> _buildTimelineSessions() {
+    final selectedDate = _days[_selectedDayIndex]['fullDate'];
+    final daySessions = _sessions.where((s) {
+      final startTime = DateTime.parse(s['start_time']).toLocal();
+      return DateFormat('yyyy-MM-dd').format(startTime) == selectedDate;
+    }).toList();
+
+    if (daySessions.isEmpty) {
+      return [
+        const SizedBox(height: 60),
+        Center(
+          child: Text(
+            'No classes for this day.',
+            style: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
+          ),
+        ),
+      ];
+    }
+
+    daySessions.sort((a, b) => a['start_time'].compareTo(b['start_time']));
+
+    return daySessions.map((session) {
+      final startTime = DateTime.parse(session['start_time']).toLocal();
+      final endTime = DateTime.parse(session['end_time']).toLocal();
+      final now = DateTime.now();
+
+      TimelineStatus timelineStatus;
+      if (now.isAfter(endTime)) {
+        timelineStatus = TimelineStatus.completed;
+      } else if (now.isAfter(startTime) && now.isBefore(endTime)) {
+        timelineStatus = TimelineStatus.active;
+      } else {
+        timelineStatus = TimelineStatus.upcoming;
+      }
+
+      return _buildTimelineItem(
+        time: DateFormat('HH:mm').format(startTime),
+        status: timelineStatus,
+        child: ClassCard(
+          title: session['topic'] ?? 'Untitled Session',
+          time: '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)}',
+          location: 'Room ${session['course_id']}', // Ideally we'd have a room field
+          lecturer: 'Lecturer ID: ${session['lecturer_id'] ?? 'N/A'}',
+          status: now.isAfter(endTime) ? ClassStatus.completed : ClassStatus.upcoming,
+          isHighlighted: timelineStatus == TimelineStatus.active,
+        ),
+      );
+    }).toList();
   }
 
   Widget _buildDateSelector() {
