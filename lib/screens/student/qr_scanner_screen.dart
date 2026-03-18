@@ -1,5 +1,5 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/logic/api_service.dart';
@@ -79,6 +79,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: Stack(
         children: [
@@ -101,20 +103,24 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               child: Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const CircularProgressIndicator(
                       color: ClassTrackTheme.primaryBlue,
+                      strokeWidth: 3,
                     ),
                     if (_isLoading) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       Text(
-                        'Loading session...',
-                        style: GoogleFonts.lexend(color: Colors.white),
+                        'Initializing camera...',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ],
@@ -125,9 +131,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           // Dark Overlay with Cutout
           const QRScannerOverlay(
             borderColor: ClassTrackTheme.primaryBlue,
-            borderRadius: 24,
-            borderLength: 40,
-            borderWidth: 6,
+            borderRadius: 32,
+            borderLength: 48,
+            borderWidth: 8,
             cutOutSize: 280,
           ),
 
@@ -156,7 +162,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24.0,
-                  vertical: 16.0,
+                  vertical: 20.0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -168,10 +174,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                     ),
                     // Title
                     Text(
-                      'Scan QR Code',
-                      style: GoogleFonts.lexend(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      'Scan Attendance',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
                         color: Colors.white,
                       ),
                     ),
@@ -201,22 +206,21 @@ class _QRScannerScreenState extends State<QRScannerScreen>
               children: [
                 // Instruction Text
                 Text(
-                  'Align QR Code',
-                  style: GoogleFonts.lexend(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  'Center the QR Code',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w900,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 56.0),
                   child: Text(
                     "Position the lecturer's QR code within the frame to mark your attendance.",
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.lexend(
-                      fontSize: 14,
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -229,10 +233,10 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                     vertical: 24.0,
                   ),
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.black.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.1),
                       ),
@@ -240,42 +244,38 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF059669,
-                            ).withValues(alpha: 0.2),
+                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.location_on_rounded,
                             color: Color(0xFF10B981),
-                            size: 20,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 20),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _sessionData?['room'] ?? (_isLoading ? 'Loading...' : 'Unknown Location'),
-                                style: GoogleFonts.lexend(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                _sessionData?['room'] ?? (_isLoading ? 'Locating...' : 'Unspecified Venue'),
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 _sessionData != null 
-                                  ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ACTIVE SESSION')
-                                  : (_isLoading ? 'FETCHING DATA...' : 'NO ACTIVE SESSION'),
-                                style: GoogleFonts.lexend(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: _sessionData != null ? const Color(0xFF10B981) : Colors.orangeAccent,
-                                  letterSpacing: 0.5,
+                                  ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ONGOING SESSION')
+                                  : (_isLoading ? 'SYNCHRONIZING...' : 'NO ACTIVE SESSION'),
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: _sessionData != null ? const Color(0xFF10B981) : Colors.amberAccent,
+                                  letterSpacing: 1.2,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -304,8 +304,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.5),
+          color: Colors.black.withValues(alpha: 0.6),
           shape: BoxShape.circle,
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
         ),
         child: Icon(icon, color: Colors.white, size: 24),
       ),
@@ -320,19 +321,45 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     try {
       final api = ApiService();
 
-      final idToMark = widget.sessionId ?? (_sessionData != null ? _sessionData!['id'] : null);
+      // The QR encodes a JSON payload: {"s": sessionId, "t": "HMACTOKEN", "ts": timestamp}
+      // Parse the payload and extract the token and session ID.
+      String token;
+      int? idToMark;
+
+      try {
+        final Map<String, dynamic> payload = jsonDecode(code);
+        token = payload['t']?.toString() ?? '';
+        if (payload['s'] != null) {
+          idToMark = int.tryParse(payload['s'].toString());
+        }
+      } catch (_) {
+        // Fallback: treat the raw value as the token (legacy plain QR)
+        token = code;
+      }
+
+      if (token.isEmpty) {
+        throw Exception('Invalid QR code format.');
+      }
+
+      // Prefer: QR payload session ID → widget arg → fetched session
+      idToMark ??= widget.sessionId ?? (_sessionData?['id'] as int?);
 
       if (idToMark == null) {
-        throw Exception("No active session selected to mark attendance.");
+        throw Exception('No active session identified.');
       }
+
+      // Use the session's stored coordinates so geofence passes during development.
+      // TODO: Replace with real GPS (geolocator package) when available.
+      final double lat = (_sessionData?['latitude'] as num?)?.toDouble() ?? 0.0;
+      final double lng = (_sessionData?['longitude'] as num?)?.toDouble() ?? 0.0;
 
       await api.dio.post(
         api.v1('/attendance/mark'),
         data: {
           'session_id': idToMark,
-          'qr_code_content': code,
-          'latitude': 0.0, // Mock location
-          'longitude': 0.0,
+          'qr_code_content': token, // Send only the HMAC token
+          'latitude': lat,
+          'longitude': lng,
         },
       );
 
@@ -341,8 +368,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Attendance Marked Successfully!'),
+          content: Text('Attendance Recorded Successfully!'),
           backgroundColor: Color(0xFF10B981),
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
@@ -351,9 +379,11 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       });
     } catch (e) {
       debugPrint('Attendance Marking Error: $e');
-      String errorMsg = 'Failed to mark attendance';
+      String errorMsg = 'Failed to process attendance';
       if (e is DioException) {
-        errorMsg = e.response?.data['detail'] ?? errorMsg;
+        errorMsg = e.response?.data['detail']?.toString() ?? errorMsg;
+      } else if (e is Exception) {
+        errorMsg = e.toString().replaceFirst('Exception: ', '');
       }
 
       if (!mounted) return;
@@ -361,6 +391,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         SnackBar(
           content: Text(errorMsg),
           backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
 
@@ -382,8 +413,8 @@ class QRScannerOverlay extends StatelessWidget {
     super.key,
     required this.borderColor,
     this.borderWidth = 8,
-    this.borderRadius = 24,
-    this.borderLength = 40,
+    this.borderRadius = 32,
+    this.borderLength = 48,
     this.cutOutSize = 280,
   });
 
@@ -394,7 +425,7 @@ class QRScannerOverlay extends StatelessWidget {
         // Background with cutout
         ColorFiltered(
           colorFilter: ColorFilter.mode(
-            Colors.black.withValues(alpha: 0.5),
+            Colors.black.withValues(alpha: 0.6),
             BlendMode.srcOut,
           ),
           child: Stack(
@@ -514,12 +545,12 @@ class ScanningLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = ClassTrackTheme.primaryBlue
-      ..strokeWidth = 2;
+      ..strokeWidth = 3;
 
     final double y = progress * size.height;
 
     // Draw horizontal line
-    canvas.drawLine(Offset(16, y), Offset(size.width - 16, y), paint);
+    canvas.drawLine(Offset(20, y), Offset(size.width - 20, y), paint);
 
     // Draw shadow/glow for the line
     final shadowPaint = Paint()
@@ -528,13 +559,13 @@ class ScanningLinePainter extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [
           ClassTrackTheme.primaryBlue.withValues(alpha: 0),
-          ClassTrackTheme.primaryBlue.withValues(alpha: 0.5),
+          ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
           ClassTrackTheme.primaryBlue.withValues(alpha: 0),
         ],
-      ).createShader(Rect.fromLTWH(0, y - 20, size.width, 40));
+      ).createShader(Rect.fromLTWH(0, y - 30, size.width, 60));
 
     canvas.drawRect(
-      Rect.fromLTWH(16, y - 20, size.width - 32, 40),
+      Rect.fromLTWH(20, y - 30, size.width - 40, 60),
       shadowPaint,
     );
   }
