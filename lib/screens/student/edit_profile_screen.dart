@@ -1,6 +1,5 @@
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../logic/api_service.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -118,22 +117,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           'Edit Profile',
-          style: GoogleFonts.lexend(
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w900,
           ),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
+        backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(
-            Icons.arrow_back_ios_new,
-            color: Colors.black,
+            Icons.arrow_back_ios_new_rounded,
             size: 20,
           ),
           onPressed: () => Navigator.pop(context),
@@ -142,75 +141,89 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: _isLoadingDepts
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildLabel('Full Name'),
+                    _buildLabel(theme, 'Full Name'),
                     _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
                       controller: _nameController,
                       hintText: 'Your Name',
-                      icon: Icons.person_outline,
+                      icon: Icons.person_rounded,
                       validator: (v) => v!.isEmpty ? 'Name is required' : null,
                     ),
-                    const SizedBox(height: 20),
-                    _buildLabel('Email Address'),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Email Address'),
                     _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
                       controller: _emailController,
                       hintText: 'email@example.com',
-                      icon: Icons.email_outlined,
+                      icon: Icons.alternate_email_rounded,
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) => v!.isEmpty ? 'Email is required' : null,
                     ),
-                    const SizedBox(height: 20),
-                    _buildLabel('Department'),
-                    _buildDepartmentDropdown(),
                     const SizedBox(height: 24),
-                    const Divider(color: Color(0xFFF1F5F9), thickness: 1),
-                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Department'),
+                    _buildDepartmentDropdown(theme, isDark),
+                    const SizedBox(height: 32),
+                    Divider(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9), 
+                      thickness: 1.5,
+                    ),
+                    const SizedBox(height: 32),
                     Text(
-                      'CHANGE PASSWORD',
-                      style: GoogleFonts.lexend(
+                      'SECURITY UPDATES',
+                      style: theme.textTheme.labelLarge?.copyWith(
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF94A3B8),
-                        letterSpacing: 1,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        letterSpacing: 2,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildLabel('Current Password'),
+                    const SizedBox(height: 20),
+                    _buildLabel(theme, 'Current Password'),
                     _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
                       controller: _currentPasswordController,
                       hintText: 'Enter current password',
-                      icon: Icons.lock_outline,
+                      icon: Icons.lock_rounded,
                       isPassword: true,
                       obscureText: _obscureCurrent,
                       toggleObscure: () => setState(() => _obscureCurrent = !_obscureCurrent),
                     ),
-                    const SizedBox(height: 20),
-                    _buildLabel('New Password'),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'New Password'),
                     _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
                       controller: _newPasswordController,
                       hintText: 'Enter new password',
-                      icon: Icons.lock_reset_outlined,
+                      icon: Icons.password_rounded,
                       isPassword: true,
                       obscureText: _obscureNew,
                       toggleObscure: () => setState(() => _obscureNew = !_obscureNew),
                     ),
-                    const SizedBox(height: 20),
-                    _buildLabel('Confirm New Password'),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Confirm New Password'),
                     _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
                       controller: _confirmPasswordController,
                       hintText: 'Re-enter new password',
-                      icon: Icons.lock_clock_outlined,
+                      icon: Icons.verified_user_rounded,
                       isPassword: true,
                       obscureText: _obscureConfirm,
                       toggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
+                    const SizedBox(height: 48),
+                    _buildSaveButton(theme),
                     const SizedBox(height: 40),
-                    _buildSaveButton(),
                   ],
                 ),
               ),
@@ -218,21 +231,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(ThemeData theme, String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
       child: Text(
         text,
-        style: GoogleFonts.lexend(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.black87,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
   }
 
   Widget _buildTextField({
+    required ThemeData theme,
+    required bool isDark,
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
@@ -244,27 +257,31 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
         validator: validator,
         obscureText: obscureText,
-        style: GoogleFonts.lexend(fontSize: 15),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: GoogleFonts.lexend(
+          hintStyle: theme.textTheme.bodyMedium?.copyWith(
             color: const Color(0xFF94A3B8),
-            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
           prefixIcon: Icon(icon, color: const Color(0xFF64748B), size: 20),
           suffixIcon: isPassword
               ? IconButton(
                   icon: Icon(
-                    obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                     color: const Color(0xFF94A3B8),
                     size: 20,
                   ),
@@ -273,40 +290,45 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+            horizontal: 20,
+            vertical: 16,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildDepartmentDropdown() {
+  Widget _buildDepartmentDropdown(ThemeData theme, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           value: _selectedDepartmentId,
+          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           hint: Text(
             'Select Department',
-            style: GoogleFonts.lexend(
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: const Color(0xFF94A3B8),
-              fontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
           ),
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF64748B)),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
           items: _departments.map((dept) {
             return DropdownMenuItem<int>(
               value: dept['id'],
               child: Text(
                 dept['name'],
-                style: GoogleFonts.lexend(fontSize: 15),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             );
           }).toList(),
@@ -318,17 +340,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Widget _buildSaveButton() {
+  Widget _buildSaveButton(ThemeData theme) {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 60,
       child: ElevatedButton(
         onPressed: _isSaving ? null : _handleSave,
         style: ElevatedButton.styleFrom(
           backgroundColor: ClassTrackTheme.primaryBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(20),
           ),
           elevation: 0,
         ),
@@ -338,14 +360,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 width: 24,
                 child: CircularProgressIndicator(
                   color: Colors.white,
-                  strokeWidth: 2,
+                  strokeWidth: 2.5,
                 ),
               )
             : Text(
-                'Save Changes',
-                style: GoogleFonts.lexend(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+                'Update Profile',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
                 ),
               ),
       ),
