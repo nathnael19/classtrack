@@ -135,13 +135,17 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           ? '${(_summary!['percent'] * 100).toInt()}%'
                           : '--%',
                       improvementText: 'Total classes: ${_summary?['total_classes'] ?? 0}',
-                      chartPoints: const [
-                        Offset(0, 0.6),
-                        Offset(0.25, 0.75),
-                        Offset(0.5, 0.3),
-                        Offset(0.75, 0.45),
-                        Offset(1.0, 0.1),
-                      ],
+                      chartPoints: _summary != null && _summary!['weekly_stats'] != null
+                          ? (_summary!['weekly_stats'] as List).asMap().entries.map((e) {
+                              return Offset(e.key / 4.0, 1.0 - (e.value as double));
+                            }).toList()
+                          : const [
+                              Offset(0, 1.0),
+                              Offset(0.25, 1.0),
+                              Offset(0.5, 1.0),
+                              Offset(0.75, 1.0),
+                              Offset(1.0, 1.0),
+                            ],
                     ),
                     const SizedBox(height: 32),
                     Row(
