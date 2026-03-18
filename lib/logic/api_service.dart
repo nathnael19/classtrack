@@ -5,24 +5,29 @@ class ApiService {
   static final ApiService _instance = ApiService._internal();
   factory ApiService() => _instance;
 
-  final Dio dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:8000', // Root for auth/token, will add /api/v1 prefix for others
-    connectTimeout: const Duration(seconds: 5),
-    receiveTimeout: const Duration(seconds: 3),
-  ));
+  final Dio dio = Dio(
+    BaseOptions(
+      baseUrl:
+          'http://10.240.140.40:8000', // Root for auth/token, will add /api/v1 prefix for others
+      connectTimeout: const Duration(seconds: 5),
+      receiveTimeout: const Duration(seconds: 3),
+    ),
+  );
 
   final _storage = const FlutterSecureStorage();
 
   ApiService._internal() {
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'auth_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        return handler.next(options);
-      },
-    ));
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: 'auth_token');
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          return handler.next(options);
+        },
+      ),
+    );
   }
 
   Future<void> saveToken(String token) async {
@@ -65,7 +70,10 @@ class ApiService {
     return response.data;
   }
 
-  Future<List<dynamic>> getSessions({DateTime? startDate, DateTime? endDate}) async {
+  Future<List<dynamic>> getSessions({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     final Map<String, dynamic> queryParameters = {};
     if (startDate != null) {
       queryParameters['start_date'] = startDate.toUtc().toIso8601String();
@@ -73,7 +81,10 @@ class ApiService {
     if (endDate != null) {
       queryParameters['end_date'] = endDate.toUtc().toIso8601String();
     }
-    final response = await dio.get(v1('/sessions/'), queryParameters: queryParameters);
+    final response = await dio.get(
+      v1('/sessions/'),
+      queryParameters: queryParameters,
+    );
     return response.data;
   }
 
