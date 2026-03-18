@@ -86,4 +86,9 @@ class ApiService {
     final response = await dio.get(v1('/attendance/summary'));
     return response.data;
   }
+
+  Future<List<dynamic>> getDepartments() async {
+    final response = await dio.get(v1('/departments/'));
+    return response.data;
+  }
 }
