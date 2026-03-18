@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/logic/cubits/theme/theme_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/theme/design_theme.dart';
@@ -135,29 +134,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFAFA),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildBackButton(context),
-              const SizedBox(height: 24),
+              _buildBackButton(context, theme),
+              const SizedBox(height: 32),
               Text(
                 'Settings',
-                style: GoogleFonts.lexend(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                style: theme.textTheme.headlineLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 32),
-              _buildSectionHeader('GENERAL PREFERENCES'),
-              _buildSettingsGroup([
+              _buildSectionHeader(theme, isDark, 'GENERAL PREFERENCES'),
+              _buildSettingsGroup(isDark, [
                 _buildSwitchItem(
-                  icon: Icons.dark_mode_outlined,
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.dark_mode_rounded,
                   title: 'Dark Mode',
                   value: context.watch<ThemeCubit>().isDarkMode,
                   onChanged: (val) {
@@ -166,42 +167,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   },
                 ),
                 _buildSwitchItem(
-                  icon: Icons.notifications_none_rounded,
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.notifications_active_rounded,
                   title: 'Push Notifications',
                   value: _pushNotifications,
                   onChanged: (val) => _updateSetting('push_notifications', val),
                 ),
               ]),
               const SizedBox(height: 32),
-              _buildSectionHeader('SECURITY & PERMISSIONS'),
-              _buildSettingsGroup([
+              _buildSectionHeader(theme, isDark, 'SECURITY & PERMISSIONS'),
+              _buildSettingsGroup(isDark, [
                 _buildSwitchItem(
+                  theme: theme,
+                  isDark: isDark,
                   icon: Icons.fingerprint_rounded,
                   title: 'Biometric Login',
                   value: _biometricLogin,
                   onChanged: (val) => _updateSetting('biometric_login', val),
                 ),
                 _buildSwitchItem(
-                  icon: Icons.location_on_outlined,
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.location_history_rounded,
                   title: 'Location Access',
                   value: _locationAccess,
                   onChanged: (val) => _updateSetting('location_access', val),
                 ),
               ]),
               const SizedBox(height: 32),
-              _buildSectionHeader('ABOUT'),
-              _buildSettingsGroup([
+              _buildSectionHeader(theme, isDark, 'ABOUT'),
+              _buildSettingsGroup(isDark, [
                 _buildNavigationItem(
-                  icon: Icons.security_outlined,
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.policy_rounded,
                   title: 'Privacy Policy',
                 ),
                 _buildNavigationItem(
-                  icon: Icons.description_outlined,
+                  theme: theme,
+                  isDark: isDark,
+                  icon: Icons.gavel_rounded,
                   title: 'Terms of Service',
                 ),
               ]),
-              const SizedBox(height: 48),
-              _buildFooter(),
+              const SizedBox(height: 60),
+              _buildFooter(theme, isDark),
             ],
           ),
         ),
@@ -209,9 +220,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildBackButton(BuildContext context) {
+  Widget _buildBackButton(BuildContext context, ThemeData theme) {
     return InkWell(
       onTap: () => Navigator.pop(context),
+      borderRadius: BorderRadius.circular(8),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -220,12 +232,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             size: 16,
             color: ClassTrackTheme.primaryBlue,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
           Text(
             'Profile',
-            style: GoogleFonts.lexend(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
               color: ClassTrackTheme.primaryBlue,
             ),
           ),
@@ -234,30 +245,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(ThemeData theme, bool isDark, String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      padding: const EdgeInsets.only(left: 4, bottom: 16),
       child: Text(
         title,
-        style: GoogleFonts.lexend(
+        style: theme.textTheme.labelLarge?.copyWith(
           fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: const Color(0xFF94A3B8),
-          letterSpacing: 1,
+          fontWeight: FontWeight.w900,
+          color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+          letterSpacing: 2,
         ),
       ),
     );
   }
 
-  Widget _buildSettingsGroup(List<Widget> items) {
+  Widget _buildSettingsGroup(bool isDark, List<Widget> items) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFF1F5F9)),
-        boxShadow: [
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+        ),
+        boxShadow: isDark ? [] : [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -269,7 +282,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           return Column(
             children: [
               items[index],
-              const Divider(height: 1, color: Color(0xFFF1F5F9), indent: 56),
+              Divider(
+                height: 1, 
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9), 
+                indent: 60,
+              ),
             ],
           );
         }),
@@ -278,20 +295,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSwitchItem({
+    required ThemeData theme,
+    required bool isDark,
     required IconData icon,
     required String title,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: _buildIconFrame(icon),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      leading: _buildIconFrame(isDark, icon),
       title: Text(
         title,
-        style: GoogleFonts.lexend(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF334155),
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
         ),
       ),
       trailing: Switch(
@@ -300,63 +317,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
         activeThumbColor: Colors.white,
         activeTrackColor: ClassTrackTheme.primaryBlue,
         inactiveThumbColor: Colors.white,
-        inactiveTrackColor: const Color(0xFFE2E8F0),
+        inactiveTrackColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
     );
   }
 
-  Widget _buildNavigationItem({required IconData icon, required String title}) {
+  Widget _buildNavigationItem({
+    required ThemeData theme, 
+    required bool isDark,
+    required IconData icon, 
+    required String title,
+  }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: _buildIconFrame(icon),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      leading: _buildIconFrame(isDark, icon),
       title: Text(
         title,
-        style: GoogleFonts.lexend(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF334155),
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
         ),
       ),
       trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 14,
+        Icons.chevron_right_rounded,
+        size: 20,
         color: Color(0xFFCBD5E1),
       ),
       onTap: () {},
     );
   }
 
-  Widget _buildIconFrame(IconData icon) {
+  Widget _buildIconFrame(bool isDark, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(10),
+        color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: const Color(0xFF64748B), size: 20),
     );
   }
 
-  Widget _buildFooter() {
+  Widget _buildFooter(ThemeData theme, bool isDark) {
     return Center(
       child: Column(
         children: [
           Text(
             'ClassTrack for Education',
-            style: GoogleFonts.lexend(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF94A3B8),
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             'Version 1.0.4 (24B102)',
-            style: GoogleFonts.lexend(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: const Color(0xFFCBD5E1),
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
             ),
           ),
         ],
