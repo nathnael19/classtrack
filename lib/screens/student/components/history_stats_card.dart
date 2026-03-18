@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/design_theme.dart';
 
 class HistoryStatsCard extends StatelessWidget {
@@ -16,90 +15,86 @@ class HistoryStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Monthly Average',
-                    style: GoogleFonts.lexend(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: const Color(0xFF64748B),
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Monthly Average',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      averagePercentage,
+                      style: theme.textTheme.displayLarge?.copyWith(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                        color: ClassTrackTheme.primaryBlue,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFDCFCE7).withValues(alpha: isDark ? 0.2 : 1.0),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    improvementText,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF22C55E),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    averagePercentage,
-                    style: GoogleFonts.lexend(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: ClassTrackTheme.primaryBlue,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDCFCE7),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  improvementText,
-                  style: GoogleFonts.lexend(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF16A34A),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            height: 120,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: AttendanceTrendChart(points: chartPoints),
+              ],
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(5, (index) {
-              return Text(
-                'W${index + 1}',
-                style: GoogleFonts.lexend(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF94A3B8),
-                ),
-              );
-            }),
-          ),
-        ],
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 120,
+              width: double.infinity,
+              child: CustomPaint(
+                painter: AttendanceTrendChart(points: chartPoints, isDark: isDark),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(5, (index) {
+                return Text(
+                  'W${index + 1}',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  ),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -107,8 +102,9 @@ class HistoryStatsCard extends StatelessWidget {
 
 class AttendanceTrendChart extends CustomPainter {
   final List<Offset> points;
+  final bool isDark;
 
-  AttendanceTrendChart({required this.points});
+  AttendanceTrendChart({required this.points, this.isDark = false});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -124,14 +120,13 @@ class AttendanceTrendChart extends CustomPainter {
         end: Alignment.bottomCenter,
         colors: [
           ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
-          ClassTrackTheme.primaryBlue.withValues(alpha: 0.01),
+          ClassTrackTheme.primaryBlue.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     final path = Path();
     final fillPath = Path();
 
-    // Transform relative points (0-1) to pixel points
     final List<Offset> pixelPoints = points.map((p) {
       return Offset(p.dx * size.width, p.dy * size.height);
     }).toList();
@@ -153,14 +148,13 @@ class AttendanceTrendChart extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, paint);
 
-    // Draw dots
     final dotPaint = Paint()
       ..color = ClassTrackTheme.primaryBlue
       ..style = PaintingStyle.fill;
 
     for (var point in pixelPoints) {
       canvas.drawCircle(point, 4, dotPaint);
-      canvas.drawCircle(point, 2, Paint()..color = Colors.white);
+      canvas.drawCircle(point, 2, Paint()..color = isDark ? const Color(0xFF1E293B) : Colors.white);
     }
   }
 
