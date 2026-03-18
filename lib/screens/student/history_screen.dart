@@ -20,6 +20,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   String _selectedPeriod = 'This Month';
   DateTime? _selectedDate;
   List<dynamic> _history = [];
+  Map<String, dynamic>? _summary;
   bool _isLoading = true;
 
   @override
@@ -31,10 +32,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   Future<void> _fetchHistory() async {
     try {
       final api = ApiService();
-      final response = await api.getAttendanceHistory();
+      final results = await Future.wait([
+        api.getAttendanceHistory(),
+        api.getAttendanceSummary(),
+      ]);
       if (mounted) {
         setState(() {
-          _history = response;
+          _history = results[0] as List<dynamic>;
+          _summary = results[1] as Map<String, dynamic>;
           _isLoading = false;
         });
       }
@@ -113,12 +118,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                     HistoryFilterDropdowns(
                       selectedCourse: _selectedCourse,
                       selectedPeriod: _selectedPeriod,
-                      courses: const [
-                        'All Courses',
-                        'CS 101',
-                        'Math 402',
-                        'Design 201',
-                      ],
+                      courses: ['All Courses', ..._history.map((e) => e['course_name'] as String).toSet()],
                       periods: const [
                         'This Month',
                         'Last Month',
@@ -130,10 +130,12 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           setState(() => _selectedPeriod = val!),
                     ),
                     const SizedBox(height: 24),
-                    const HistoryStatsCard(
-                      averagePercentage: '94%',
-                      improvementText: '+2.4% vs last mo',
-                      chartPoints: [
+                    HistoryStatsCard(
+                      averagePercentage: _summary != null
+                          ? '${(_summary!['percent'] * 100).toInt()}%'
+                          : '--%',
+                      improvementText: 'Total classes: ${_summary?['total_classes'] ?? 0}',
+                      chartPoints: const [
                         Offset(0, 0.6),
                         Offset(0.25, 0.75),
                         Offset(0.5, 0.3),
@@ -182,7 +184,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       )
                     else
                       Column(
-                        children: _history.map((record) {
+                        children: _history.where((record) {
+                          if (_selectedCourse != 'All Courses' && record['course_name'] != _selectedCourse) return false;
+                          if (_selectedDate != null) {
+                            final ts = DateTime.parse(record['timestamp']).toLocal();
+                            if (ts.year != _selectedDate!.year || ts.month != _selectedDate!.month || ts.day != _selectedDate!.day) return false;
+                          }
+                          return true;
+                        }).map((record) {
                           final timestamp = DateTime.parse(record['timestamp']).toLocal();
                           final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
                           Color statusColor;
@@ -198,7 +207,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                           }
 
                           return HistorySessionItem(
-                            course: 'Course ID: ${record['session_id']}', // Ideally we'd map this to a name
+                            course: record['course_name'] ?? 'Unknown Course',
                             dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
                             status: status,
                             icon: Icons.class_outlined,
