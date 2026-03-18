@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ClassTrackTheme {
-  static const Color primaryBlue = Color(0xFF3F68E4);
+  // Brand Colors (Aligned with Web HSL 239 84% 67%)
+  static const Color primaryBlue = Color(0xFF6366F1); 
+  static const Color accentEmerald = Color(0xFF10B981);
   static const Color backgroundWhite = Color(0xFFFFFFFF);
-  static const Color textDark = Color(0xFF000000);
-  static const Color subtleGray = Color(0xFFF0F0F0);
-  static const Color errorRed = Color(0xFFD32F2F); // Standard error red
-  static const Color successGreen = Color(0xFF388E3C); // Standard success green
+  static const Color textDark = Color(0xFF0F172A);
+  static const Color subtleGray = Color(0xFFF1F5F9);
+  static const Color errorRed = Color(0xFFEF4444);
+  static const Color successGreen = Color(0xFF10B981);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -16,6 +18,7 @@ class ClassTrackTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryBlue,
         primary: primaryBlue,
+        secondary: accentEmerald,
         surface: backgroundWhite,
         onSurface: textDark,
         error: errorRed,
@@ -24,8 +27,9 @@ class ClassTrackTheme {
       textTheme: GoogleFonts.lexendTextTheme().copyWith(
         displayLarge: GoogleFonts.lexend(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w800,
           color: textDark,
+          letterSpacing: -1,
         ),
         titleLarge: GoogleFonts.lexend(
           fontSize: 22,
@@ -47,15 +51,24 @@ class ClassTrackTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
           textStyle: GoogleFonts.lexend(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
           ),
         ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xFFF1F5F9)),
+        ),
+        color: Colors.white,
       ),
     );
   }
@@ -65,11 +78,11 @@ class ClassTrackTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF3B82F6),
-        secondary: Color(0xFF10B981),
+        primary: primaryBlue,
+        secondary: accentEmerald,
         surface: Color(0xFF1E293B),
         onSurface: Colors.white,
-        error: Color(0xFFEF4444),
+        error: errorRed,
       ),
       scaffoldBackgroundColor: const Color(0xFF0F172B),
       textTheme: GoogleFonts.lexendTextTheme()
@@ -77,8 +90,9 @@ class ClassTrackTheme {
           .copyWith(
             displayLarge: GoogleFonts.lexend(
               fontSize: 32,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w800,
               color: Colors.white,
+              letterSpacing: -1,
             ),
             titleLarge: GoogleFonts.lexend(
               fontSize: 22,
@@ -92,13 +106,21 @@ class ClassTrackTheme {
           ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: primaryBlue,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
           elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: Color(0xFF334155)),
+        ),
+        color: const Color(0xFF1E293B),
       ),
     );
   }
