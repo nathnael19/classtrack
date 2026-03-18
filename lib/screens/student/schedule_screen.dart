@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../theme/design_theme.dart';
-
 import '../../logic/api_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
@@ -97,6 +95,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _anchorDate,
@@ -104,33 +105,33 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+          data: theme.copyWith(
+            colorScheme: theme.colorScheme.copyWith(
               primary: ClassTrackTheme.primaryBlue,
               onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: const Color(0xFF0F172A),
+              surface: isDark ? const Color(0xFF1E293B) : Colors.white,
+              onSurface: isDark ? Colors.white : const Color(0xFF0F172A),
             ),
             datePickerTheme: DatePickerThemeData(
               headerBackgroundColor: ClassTrackTheme.primaryBlue,
               headerForegroundColor: Colors.white,
-              backgroundColor: Colors.white,
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),
-              dayStyle: GoogleFonts.lexend(fontWeight: FontWeight.w500),
-              weekdayStyle: GoogleFonts.lexend(
+              dayStyle: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+              weekdayStyle: theme.textTheme.bodySmall?.copyWith(
                 color: const Color(0xFF64748B),
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
               ),
-              yearStyle: GoogleFonts.lexend(),
-              headerHeadlineStyle: GoogleFonts.lexend(
+              yearStyle: theme.textTheme.bodyMedium,
+              headerHeadlineStyle: theme.textTheme.headlineSmall?.copyWith(
                 fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
               ),
-              headerHelpStyle: GoogleFonts.lexend(
+              headerHelpStyle: theme.textTheme.labelMedium?.copyWith(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -150,20 +151,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(
         child: Column(
           children: [
-            _buildHeader(context),
+            _buildHeader(context, theme, isDark),
             const SizedBox(height: 24),
-            _buildDateSelector(),
+            _buildDateSelector(isDark, theme),
             const SizedBox(height: 32),
-                        Expanded(
+            Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : RefreshIndicator(
                       onRefresh: _fetchSessions,
+                      color: ClassTrackTheme.primaryBlue,
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -172,16 +176,26 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             if (_sessions.isEmpty)...[
                               const SizedBox(height: 100),
                               Center(
-                                child: Text(
-                                  'No sessions scheduled for this week.',
-                                  style: GoogleFonts.lexend(
-                                    color: const Color(0xFF64748B),
-                                    fontSize: 16,
-                                  ),
+                                child: Column(
+                                  children: [
+                                    Icon(
+                                      Icons.event_note_rounded,
+                                      size: 48,
+                                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      'No sessions scheduled for this week.',
+                                      style: theme.textTheme.bodyLarge?.copyWith(
+                                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ] else
-                              ..._buildTimelineSessions(),
+                              ..._buildTimelineSessions(theme, isDark),
                             const SizedBox(height: 100), // Space for navigation
                           ],
                         ),
@@ -194,7 +208,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, ThemeData theme, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
@@ -205,19 +219,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             children: [
               Text(
                 'Weekly Schedule',
-                style: GoogleFonts.lexend(
+                style: theme.textTheme.headlineMedium?.copyWith(
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  fontWeight: FontWeight.w900,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 DateFormat('MMMM yyyy').format(_anchorDate),
-                style: GoogleFonts.lexend(
+                style: theme.textTheme.titleMedium?.copyWith(
                   fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 ),
               ),
             ],
@@ -227,9 +240,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [
+                border: Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                ),
+                boxShadow: isDark ? [] : [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
@@ -237,7 +253,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ],
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.calendar_month_outlined,
                 color: ClassTrackTheme.primaryBlue,
               ),
@@ -248,7 +264,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-    List<Widget> _buildTimelineSessions() {
+  List<Widget> _buildTimelineSessions(ThemeData theme, bool isDark) {
     final selectedDate = _days[_selectedDayIndex]['fullDate'];
     final daySessions = _sessions.where((s) {
       final startTime = DateTime.parse(s['start_time']).toLocal();
@@ -261,7 +277,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         Center(
           child: Text(
             'No classes for this day.',
-            style: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ];
@@ -284,6 +303,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       }
 
       return _buildTimelineItem(
+        theme: theme,
         time: DateFormat('HH:mm').format(startTime),
         status: timelineStatus,
         child: ClassCard(
@@ -298,7 +318,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }).toList();
   }
 
-  Widget _buildDateSelector() {
+  Widget _buildDateSelector(bool isDark, ThemeData theme) {
     return SizedBox(
       height: 100,
       child: ListView.builder(
@@ -315,8 +335,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               width: 70,
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: isSelected ? ClassTrackTheme.primaryBlue : Colors.white,
+                color: isSelected ? ClassTrackTheme.primaryBlue : (isDark ? const Color(0xFF1E293B) : Colors.white),
                 borderRadius: BorderRadius.circular(20),
+                border: !isSelected ? Border.all(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                ) : null,
                 boxShadow: [
                   if (isSelected)
                     BoxShadow(
@@ -324,7 +347,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     )
-                  else
+                  else if (!isDark)
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
@@ -337,23 +360,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 children: [
                   Text(
                     _days[index]['day']!,
-                    style: GoogleFonts.lexend(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
                       color: isSelected
-                          ? Colors.white70
-                          : const Color(0xFF94A3B8),
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     _days[index]['date']!,
-                    style: GoogleFonts.lexend(
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w900,
                       color: isSelected
                           ? Colors.white
-                          : const Color(0xFF0F172A),
+                          : (isDark ? Colors.white : const Color(0xFF0F172A)),
                     ),
                   ),
                   if (isSelected) ...[
@@ -377,10 +400,12 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Widget _buildTimelineItem({
+    required ThemeData theme,
     required String time,
     required TimelineStatus status,
     required Widget child,
   }) {
+    final isDark = theme.brightness == Brightness.dark;
     return IntrinsicHeight(
       child: Row(
         children: [
@@ -390,18 +415,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Text(
                   time,
-                  style: GoogleFonts.lexend(
+                  style: theme.textTheme.labelLarge?.copyWith(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                     color: status == TimelineStatus.active
                         ? ClassTrackTheme.primaryBlue
-                        : const Color(0xFF94A3B8),
+                        : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
                   ),
                 ),
                 const SizedBox(height: 8),
                 _buildStatusIndicator(status),
                 Expanded(
-                  child: Container(width: 1, color: const Color(0xFFE2E8F0)),
+                  child: Container(
+                    width: 1.5, 
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                  ),
                 ),
               ],
             ),
@@ -422,7 +450,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     switch (status) {
       case TimelineStatus.completed:
         return const Icon(
-          Icons.check_circle,
+          Icons.check_circle_rounded,
           color: Color(0xFF10B981),
           size: 24,
         );
@@ -436,7 +464,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
           padding: const EdgeInsets.all(4),
           child: Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: ClassTrackTheme.primaryBlue,
               shape: BoxShape.circle,
             ),
@@ -446,9 +474,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return Container(
           width: 24,
           height: 24,
-          decoration: const BoxDecoration(
-            color: Color(0xFFE2E8F0),
+          decoration: BoxDecoration(
+            color: const Color(0xFF64748B).withValues(alpha: 0.1),
             shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFF64748B).withValues(alpha: 0.2),
+              width: 1,
+            ),
           ),
         );
     }
@@ -479,17 +511,21 @@ class ClassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: isHighlighted
-            ? Border(
-                left: BorderSide(color: ClassTrackTheme.primaryBlue, width: 4),
-              )
-            : null,
-        boxShadow: [
+        border: Border.all(
+          color: isHighlighted 
+            ? ClassTrackTheme.primaryBlue.withValues(alpha: 0.5)
+            : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+          width: isHighlighted ? 2 : 1,
+        ),
+        boxShadow: isDark ? [] : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 15,
@@ -507,59 +543,56 @@ class ClassCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: GoogleFonts.lexend(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w900,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               const SizedBox(width: 8),
-              _buildStatusTag(),
+              _buildStatusTag(theme),
             ],
           ),
           const SizedBox(height: 8),
           Text(
             time,
-            style: GoogleFonts.lexend(
+            style: theme.textTheme.bodyMedium?.copyWith(
               fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: const Color(0xFF64748B),
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.location_on_outlined,
                 size: 16,
                 color: ClassTrackTheme.primaryBlue,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
                 location,
-                style: GoogleFonts.lexend(
+                style: theme.textTheme.bodySmall?.copyWith(
                   fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF475569),
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(width: 16),
               const Icon(
                 Icons.person_outline_rounded,
                 size: 16,
-                color: Color(0xFF94A3B8),
+                color: Color(0xFF64748B),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   lecturer,
-                  style: GoogleFonts.lexend(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF475569),
+                    fontWeight: FontWeight.w800,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -571,19 +604,26 @@ class ClassCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusTag() {
+  Widget _buildStatusTag(ThemeData theme) {
     final bool isCompleted = status == ClassStatus.completed;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isCompleted ? const Color(0xFFD1FAE5) : const Color(0xFFEEF2FF),
+        color: isCompleted 
+          ? const Color(0xFFD1FAE5).withValues(alpha: isDark ? 0.2 : 1.0) 
+          : const Color(0xFFEEF2FF).withValues(alpha: isDark ? 0.2 : 1.0),
         borderRadius: BorderRadius.circular(8),
+        border: isDark ? Border.all(
+          color: isCompleted ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF6366F1).withValues(alpha: 0.3),
+        ) : null,
       ),
       child: Text(
         isCompleted ? 'COMPLETED' : 'UPCOMING',
-        style: GoogleFonts.lexend(
+        style: theme.textTheme.labelSmall?.copyWith(
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w900,
           color: isCompleted
               ? const Color(0xFF059669)
               : const Color(0xFF4F46E5),
