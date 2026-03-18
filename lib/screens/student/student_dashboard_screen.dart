@@ -331,7 +331,11 @@ class _DashboardHome extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+            MaterialPageRoute(
+              builder: (context) => QRScannerScreen(
+                sessionId: activeSessions.isNotEmpty ? activeSessions[0]['id'] : null,
+              ),
+            ),
           );
         },
         style: ElevatedButton.styleFrom(
