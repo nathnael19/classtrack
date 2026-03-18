@@ -36,7 +36,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final depts = await api.getDepartments();
       setState(() {
         _departments = depts;
-        _isLoadingDepts = false;
         if (_departments.isNotEmpty) {
           _selectedDepartmentId = _departments.first['id'];
         }
