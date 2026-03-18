@@ -1,3 +1,4 @@
+import 'package:classtrack/logic/api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:classtrack/theme/design_theme.dart';
@@ -19,6 +20,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _idController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  List<dynamic> _departments = [];
+  int? _selectedDepartmentId;
+  bool _isLoadingDepts = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDepartments();
+  }
+
+  Future<void> _fetchDepartments() async {
+    try {
+      final api = ApiService();
+      final depts = await api.getDepartments();
+      setState(() {
+        _departments = depts;
+        _isLoadingDepts = false;
+        if (_departments.isNotEmpty) {
+          _selectedDepartmentId = _departments.first['id'];
+        }
+      });
+    } catch (e) {
+      debugPrint('Error fetching departments: $e');
+      setState(() => _isLoadingDepts = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -35,7 +62,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (name.isEmpty || studentId.isEmpty || email.isEmpty || password.isEmpty) {
+    if (name.isEmpty ||
+        studentId.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty) {
       debugPrint('Registration: Validation failed - empty fields');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
@@ -46,11 +76,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     debugPrint('Registration: Calling AuthCubit.register');
 
     context.read<AuthCubit>().register(
-          name: name,
-          email: email,
-          password: password,
-          studentId: studentId,
-        );
+      name: name,
+      email: email,
+      password: password,
+      studentId: studentId,
+      departmentId: _selectedDepartmentId,
+    );
   }
 
   @override
@@ -62,14 +93,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           debugPrint('RegisterScreen: Authenticated, navigating to Dashboard');
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(builder: (context) => const StudentDashboardScreen()),
+            MaterialPageRoute(
+              builder: (context) => const StudentDashboardScreen(),
+            ),
             (route) => false,
           );
         } else if (state.error != null) {
           debugPrint('RegisterScreen: Error received: ${state.error}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.error!)),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.error!)));
         }
       },
       child: GestureDetector(
@@ -148,6 +181,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: 'e.g. 2024012345',
                     icon: Icons.badge_outlined,
                   ),
+                  const SizedBox(height: 20),
+
+                  _buildLabel('Department'),
+                  _buildDepartmentDropdown(),
                   const SizedBox(height: 20),
 
                   _buildLabel('University Email'),
@@ -295,7 +332,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    const Icon(Icons.arrow_forward_rounded, size: 20),
+                                    const Icon(
+                                      Icons.arrow_forward_rounded,
+                                      size: 20,
+                                    ),
                                   ],
                                 ),
                         ),
@@ -336,6 +376,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDepartmentDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int>(
+          value: _selectedDepartmentId,
+          isExpanded: true,
+          hint: Text(
+            'Select Department',
+            style: GoogleFonts.lexend(color: const Color(0xFF94A3B8)),
+          ),
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: Color(0xFF94A3B8),
+          ),
+          items: _departments.map((dept) {
+            return DropdownMenuItem<int>(
+              value: dept['id'],
+              child: Text(
+                dept['name'],
+                style: GoogleFonts.lexend(
+                  fontSize: 14,
+                  color: const Color(0xFF334155),
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedDepartmentId = value;
+            });
+          },
         ),
       ),
     );
