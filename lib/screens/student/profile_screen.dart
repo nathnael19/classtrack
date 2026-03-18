@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/screens/student/settings_screen.dart';
+import 'package:classtrack/screens/student/edit_profile_screen.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -98,10 +99,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: const Color(0xFF0F172A),
           ),
         ),
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.more_horiz_rounded),
-          color: const Color(0xFF0F172A),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () async {
+                if (_userData != null) {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditProfileScreen(userData: _userData!),
+                    ),
+                  );
+                  if (result == true) {
+                    _fetchProfile();
+                  }
+                }
+              },
+              icon: const Icon(Icons.edit_outlined),
+              color: const Color(0xFF0F172A),
+            ),
+            IconButton(
+              onPressed: () {},
+              icon: const Icon(Icons.more_horiz_rounded),
+              color: const Color(0xFF0F172A),
+            ),
+          ],
         ),
       ],
     );
@@ -228,6 +250,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           icon: Icons.person_outline_rounded,
           iconColor: const Color(0xFF6366F1),
           title: 'Update Profile',
+          onTap: () async {
+            if (_userData != null) {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfileScreen(userData: _userData!),
+                ),
+              );
+              if (result == true) {
+                _fetchProfile();
+              }
+            }
+          },
         ),
         _buildSettingsItem(
           icon: Icons.settings_outlined,
