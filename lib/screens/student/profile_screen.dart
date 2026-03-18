@@ -194,7 +194,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Computer Science',
+                _userData?['department_name'] ?? 'Not Assigned',
                 style: GoogleFonts.lexend(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
