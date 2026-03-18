@@ -4,6 +4,8 @@ import '../../theme/design_theme.dart';
 import 'components/history_filter_dropdowns.dart';
 import 'components/history_stats_card.dart';
 import 'components/history_session_item.dart';
+import 'package:intl/intl.dart';
+import '../../logic/api_service.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -17,6 +19,30 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
   String _selectedCourse = 'All Courses';
   String _selectedPeriod = 'This Month';
   DateTime? _selectedDate;
+  List<dynamic> _history = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      final api = ApiService();
+      final response = await api.getAttendanceHistory();
+      if (mounted) {
+        setState(() {
+          _history = response;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching history: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -142,34 +168,44 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                       ],
                     ),
                     const SizedBox(height: 16),
-                    const HistorySessionItem(
-                      course: 'Computer Science 101',
-                      dateTime: 'Oct 24, 2023 • 09:00 AM',
-                      status: 'PRESENT',
-                      icon: Icons.code,
-                      statusColor: Color(0xFF22C55E),
-                    ),
-                    const HistorySessionItem(
-                      course: 'Advanced Mathematics',
-                      dateTime: 'Oct 23, 2023 • 11:30 AM',
-                      status: 'LATE',
-                      icon: Icons.functions,
-                      statusColor: Color(0xFFF97316),
-                    ),
-                    const HistorySessionItem(
-                      course: 'Digital Design Theory',
-                      dateTime: 'Oct 22, 2023 • 02:00 PM',
-                      status: 'ABSENT',
-                      icon: Icons.palette,
-                      statusColor: Color(0xFFEF4444),
-                    ),
-                    const HistorySessionItem(
-                      course: 'Computer Science 101',
-                      dateTime: 'Oct 20, 2023 • 09:00 AM',
-                      status: 'PRESENT',
-                      icon: Icons.code,
-                      statusColor: Color(0xFF22C55E),
-                    ),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_history.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 32.0),
+                          child: Text(
+                            'No attendance history found.',
+                            style: GoogleFonts.lexend(color: const Color(0xFF64748B)),
+                          ),
+                        ),
+                      )
+                    else
+                      Column(
+                        children: _history.map((record) {
+                          final timestamp = DateTime.parse(record['timestamp']).toLocal();
+                          final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
+                          Color statusColor;
+                          switch (status) {
+                            case 'PRESENT':
+                              statusColor = const Color(0xFF22C55E);
+                              break;
+                            case 'LATE':
+                              statusColor = const Color(0xFFF97316);
+                              break;
+                            default:
+                              statusColor = const Color(0xFFEF4444);
+                          }
+
+                          return HistorySessionItem(
+                            course: 'Course ID: ${record['session_id']}', // Ideally we'd map this to a name
+                            dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
+                            status: status,
+                            icon: Icons.class_outlined,
+                            statusColor: statusColor,
+                          );
+                        }).toList(),
+                      ),
                     const SizedBox(height: 24),
                   ],
                 ),
