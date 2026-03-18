@@ -29,6 +29,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   List<dynamic> _activeSessions = [];
   List<dynamic> _upcomingSessions = [];
   Map<String, dynamic>? _userData;
+  Map<String, dynamic>? _attendanceSummary;
   bool _isLoading = true;
 
   @override
@@ -43,9 +44,24 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       _fetchActiveSessions(),
       _fetchUpcomingSessions(),
       _fetchUserProfile(),
+      _fetchAttendanceSummary(),
     ]);
     if (mounted) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchAttendanceSummary() async {
+    try {
+      final api = ApiService();
+      final response = await api.getAttendanceSummary();
+      if (mounted) {
+        setState(() {
+          _attendanceSummary = response;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching attendance summary: $e');
     }
   }
 
@@ -96,6 +112,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       activeSessions: _activeSessions,
       upcomingSessions: _upcomingSessions,
       userData: _userData,
+      attendanceSummary: _attendanceSummary,
       isLoading: _isLoading,
       onRefresh: _fetchDashboardData,
     ),
@@ -244,6 +261,7 @@ class _DashboardHome extends StatelessWidget {
   final List<dynamic> activeSessions;
   final List<dynamic> upcomingSessions;
   final Map<String, dynamic>? userData;
+  final Map<String, dynamic>? attendanceSummary;
   final bool isLoading;
   final Future<void> Function() onRefresh;
 
@@ -251,6 +269,7 @@ class _DashboardHome extends StatelessWidget {
     required this.activeSessions,
     required this.upcomingSessions,
     this.userData,
+    this.attendanceSummary,
     required this.isLoading,
     required this.onRefresh,
   });
@@ -285,10 +304,10 @@ class _DashboardHome extends StatelessWidget {
             children: [
               DashboardHeader(date: dateStr, greeting: '$greeting, $userName'),
               const SizedBox(height: 24),
-              const AttendanceStatusCard(
-                percent: 0.85,
-                status: 'Great Standing',
-                message: 'You missed only 2 classes this month.',
+              AttendanceStatusCard(
+                percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
+                status: attendanceSummary?['status'] ?? 'Calculating...',
+                message: attendanceSummary?['message'] ?? 'Fetching your records...',
               ),
               const SizedBox(height: 24),
               if (isLoading)
