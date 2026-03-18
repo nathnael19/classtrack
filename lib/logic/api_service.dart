@@ -59,4 +59,14 @@ class ApiService {
     final response = await dio.get(v1('/users/me'));
     return response.data;
   }
+
+  Future<Map<String, dynamic>> getSession(int id) async {
+    final response = await dio.get(v1('/sessions/$id'));
+    return response.data;
+  }
+
+  Future<List<dynamic>> getActiveSessions() async {
+    final response = await dio.get(v1('/sessions/active'));
+    return response.data;
+  }
 }
