@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
+import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/screens/student/settings_screen.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -17,6 +18,30 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  Map<String, dynamic>? _userData;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final api = ApiService();
+      final response = await api.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _userData = response;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching profile: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _pickImage() async {
     final currentContext = context;
@@ -46,7 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildAppBar(context),
               const SizedBox(height: 32),
-              _buildProfileHeader(),
+              _isLoading 
+                ? const Center(child: CircularProgressIndicator())
+                : _buildProfileHeader(),
               const SizedBox(height: 32),
               _buildSettingsSection(context),
               const SizedBox(height: 24),
@@ -134,7 +161,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 20),
         Text(
-          'Nathnael',
+          _userData?['name'] ?? 'Student',
           style: GoogleFonts.lexend(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -143,7 +170,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'STU-102938',
+          _userData?['student_id'] ?? 'N/A',
           style: GoogleFonts.lexend(
             fontSize: 14,
             fontWeight: FontWeight.w500,
