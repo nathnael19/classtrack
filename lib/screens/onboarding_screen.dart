@@ -39,8 +39,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: ClassTrackTheme.backgroundWhite,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -64,8 +65,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                       child: Text(
                         'Back',
-                        style: ClassTrackTheme.lightTheme.textTheme.bodyLarge
-                            ?.copyWith(
+                        style: theme.textTheme.bodyLarge?.copyWith(
                               color: const Color(0xff64748B),
                               fontWeight: FontWeight.w600,
                             ),
@@ -92,8 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       },
                       child: Text(
                         'Skip',
-                        style: ClassTrackTheme.lightTheme.textTheme.bodyLarge
-                            ?.copyWith(
+                        style: theme.textTheme.bodyLarge?.copyWith(
                               color: const Color(0xff64748B),
                               fontWeight: FontWeight.w600,
                             ),
@@ -115,6 +114,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   });
                 },
                 itemBuilder: (context, index) {
+                  final theme = Theme.of(context);
+                  final isDark = theme.brightness == Brightness.dark;
+
                   return Padding(
                     padding: const EdgeInsets.all(24.0),
                     child: Column(
@@ -127,7 +129,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F4FF),
+                              color: isDark 
+                                  ? const Color(0xFF1E293B) 
+                                  : const Color(0xFFF1F4FF),
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -135,7 +139,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   blurRadius: 30,
                                   offset: const Offset(0, 20),
                                 ),
-                                BoxShadow(
+                                if (!isDark) BoxShadow(
                                   color: Colors.blue.withValues(alpha: 0.05),
                                   blurRadius: 30,
                                   offset: const Offset(0, 20),
@@ -154,15 +158,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Text(
                           _pages[index].title,
                           textAlign: TextAlign.center,
-                          style: ClassTrackTheme
-                              .lightTheme
-                              .textTheme
-                              .displayLarge
-                              ?.copyWith(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A),
-                              ),
+                          style: theme.textTheme.displayLarge?.copyWith(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Padding(
@@ -170,16 +169,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Text(
                             _pages[index].description,
                             textAlign: TextAlign.center,
-                            style: ClassTrackTheme
-                                .lightTheme
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                                  color: const Color(0xFF475569),
-                                  height: 1.6,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w400,
-                                ),
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              height: 1.6,
+                              fontSize: 15,
+                              color: isDark ? Colors.white70 : const Color(0xFF475569),
+                            ),
                           ),
                         ),
                       ],
