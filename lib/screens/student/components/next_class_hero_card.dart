@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:classtrack/theme/design_theme.dart';
 
 class NextClassHeroCard extends StatelessWidget {
@@ -20,11 +19,20 @@ class NextClassHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: ClassTrackTheme.primaryBlue,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            ClassTrackTheme.primaryBlue,
+            ClassTrackTheme.primaryBlue.withValues(alpha: 0.8),
+          ],
+        ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
@@ -47,15 +55,15 @@ class NextClassHeroCard extends StatelessWidget {
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   'NEXT CLASS',
-                  style: GoogleFonts.lexend(
+                  style: theme.textTheme.labelLarge?.copyWith(
                     color: Colors.white,
                     fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
                   ),
                 ),
               ),
@@ -66,16 +74,16 @@ class NextClassHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
             title,
-            style: GoogleFonts.lexend(
+            style: theme.textTheme.displayLarge?.copyWith(
               color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Row(
             children: [
               const Icon(
@@ -86,9 +94,13 @@ class NextClassHeroCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 time,
-                style: GoogleFonts.lexend(color: Colors.white, fontSize: 14),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 20),
               const Icon(
                 Icons.location_on_outlined,
                 color: Colors.white70,
@@ -97,13 +109,17 @@ class NextClassHeroCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 location,
-                style: GoogleFonts.lexend(color: Colors.white, fontSize: 14),
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Divider(color: Colors.white24, height: 1),
-          const SizedBox(height: 16),
+          Divider(color: Colors.white.withValues(alpha: 0.15), height: 1),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -120,27 +136,33 @@ class NextClassHeroCard extends StatelessWidget {
                   const SizedBox(width: 8),
                   Text(
                     geofenceStatus,
-                    style: GoogleFonts.lexend(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],
               ),
-              GestureDetector(
-                onTap: onViewMap,
-                child: Text(
-                  'View Map',
-                  style: GoogleFonts.lexend(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                    decorationColor: Colors.white,
+              if (onViewMap != null)
+                TextButton(
+                  onPressed: onViewMap,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text(
+                    'View Map',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ],
