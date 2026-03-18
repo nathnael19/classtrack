@@ -39,4 +39,24 @@ class ApiService {
 
   // Helper for v1 endpoints
   String v1(String path) => '/api/v1$path';
+
+  Future<List<dynamic>> getEnrolledCourses() async {
+    final response = await dio.get(v1('/courses/'));
+    return response.data;
+  }
+
+  Future<List<dynamic>> getAttendanceHistory() async {
+    final response = await dio.get(v1('/attendance/history'));
+    return response.data;
+  }
+
+  Future<List<dynamic>> getUpcomingSessions() async {
+    final response = await dio.get(v1('/sessions/upcoming'));
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> getCurrentUser() async {
+    final response = await dio.get(v1('/users/me'));
+    return response.data;
+  }
 }
