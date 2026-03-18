@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/api_service.dart';
@@ -123,6 +122,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.unauthenticated) {
@@ -134,7 +134,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFAFAFA),
         body: IndexedStack(index: _selectedIndex, children: _pages()),
         bottomNavigationBar: _buildBottomNavigationBar(),
         floatingActionButton: Container(
@@ -146,7 +145,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             boxShadow: [
               BoxShadow(
                 color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
-                blurRadius: 12,
+                blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
             ],
@@ -182,34 +181,48 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return BottomAppBar(
-      color: Colors.white,
-      surfaceTintColor: Colors.white,
-      height: 80,
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      surfaceTintColor: Colors.transparent,
+      elevation: 0,
+      height: 85,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(icon: Icons.home_rounded, label: 'Home', index: 0),
-          _buildNavItem(
-            icon: Icons.calendar_today_rounded,
-            label: 'Schedule',
-            index: 1,
+      notchMargin: 10,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+              width: 1,
+            ),
           ),
-          const SizedBox(width: 48), // Space for FAB
-          _buildNavItem(
-            icon: Icons.history_rounded,
-            label: 'History',
-            index: 2,
-          ),
-          _buildNavItem(
-            icon: Icons.person_outline_rounded,
-            label: 'Profile',
-            index: 3,
-          ),
-        ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _buildNavItem(icon: Icons.home_rounded, label: 'Home', index: 0),
+            _buildNavItem(
+              icon: Icons.calendar_today_rounded,
+              label: 'Schedule',
+              index: 1,
+            ),
+            const SizedBox(width: 48), // Space for FAB
+            _buildNavItem(
+              icon: Icons.history_rounded,
+              label: 'History',
+              index: 2,
+            ),
+            _buildNavItem(
+              icon: Icons.person_outline_rounded,
+              label: 'Profile',
+              index: 3,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -219,16 +232,19 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     required String label,
     required int index,
   }) {
+    final theme = Theme.of(context);
     final isSelected = _selectedIndex == index;
+    final isDark = theme.brightness == Brightness.dark;
+
     return InkWell(
       onTap: () {
         setState(() {
           _selectedIndex = index;
         });
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -236,18 +252,18 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               icon,
               color: isSelected
                   ? ClassTrackTheme.primaryBlue
-                  : const Color(0xFF94A3B8),
-              size: 24,
+                  : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+              size: 26,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
-              style: GoogleFonts.lexend(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontSize: 11,
+                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                 color: isSelected
                     ? ClassTrackTheme.primaryBlue
-                    : const Color(0xFF94A3B8),
+                    : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
               ),
             ),
           ],
@@ -276,6 +292,9 @@ class _DashboardHome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     final DateTime nowGmt3 = DateTime.now().toUtc().add(
       const Duration(hours: 3),
     );
@@ -293,50 +312,84 @@ class _DashboardHome extends StatelessWidget {
 
     final String userName = userData?['name'] ?? 'Student';
 
-    return SafeArea(
-      child: RefreshIndicator(
-        onRefresh: onRefresh,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DashboardHeader(date: dateStr, greeting: '$greeting, $userName'),
-              const SizedBox(height: 24),
-              AttendanceStatusCard(
-                percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
-                status: attendanceSummary?['status'] ?? 'Calculating...',
-                message: attendanceSummary?['message'] ?? 'Fetching your records...',
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      color: ClassTrackTheme.primaryBlue,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DashboardHeader(date: dateStr, greeting: '$greeting, $userName'),
+            const SizedBox(height: 32),
+            AttendanceStatusCard(
+              percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
+              status: attendanceSummary?['status'] ?? 'Calculating...',
+              message: attendanceSummary?['message'] ?? 'Fetching your records...',
+            ),
+            const SizedBox(height: 32),
+            if (isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (activeSessions.isNotEmpty)
+              NextClassHeroCard(
+                title: activeSessions[0]['course_name'] ?? 'Active Session',
+                time: 'NOW',
+                location: activeSessions[0]['room'] ?? 'N/A',
+                geofenceStatus: 'Ongoing Session',
+                onViewMap: () {},
+              )
+            else
+              _buildNoActiveClassCard(theme, isDark),
+            const SizedBox(height: 32),
+            _buildScanButton(context),
+            const SizedBox(height: 40),
+            _buildUpcomingClassesHeader(theme, isDark),
+            const SizedBox(height: 16),
+            _buildClassList(theme, isDark),
+            const SizedBox(height: 100),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoActiveClassCard(ThemeData theme, bool isDark) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
+                borderRadius: BorderRadius.circular(14),
               ),
-              const SizedBox(height: 24),
-              if (isLoading)
-                const Center(child: CircularProgressIndicator())
-              else if (activeSessions.isNotEmpty)
-                NextClassHeroCard(
-                  title: activeSessions[0]['course_name'] ?? 'Active Session',
-                  time: 'NOW',
-                  location: activeSessions[0]['room'] ?? 'N/A',
-                  geofenceStatus: 'Ongoing Session',
-                  onViewMap: () {},
-                )
-              else
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('No active classes right now.'),
-                  ),
+              child: Icon(
+                Icons.event_busy_rounded,
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                'No active classes right now.',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 ),
-              const SizedBox(height: 24),
-              _buildScanButton(context),
-              // ... rest of the children (Upcoming Classes logic could also be updated but let's keep it simple)
-              const SizedBox(height: 32),
-              _buildUpcomingClassesHeader(),
-              const SizedBox(height: 16),
-              _buildClassList(),
-              const SizedBox(height: 80),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -345,7 +398,7 @@ class _DashboardHome extends StatelessWidget {
   Widget _buildScanButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 56,
+      height: 60,
       child: ElevatedButton(
         onPressed: () {
           Navigator.push(
@@ -361,21 +414,22 @@ class _DashboardHome extends StatelessWidget {
           backgroundColor: ClassTrackTheme.primaryBlue,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
-          elevation: 4,
+          elevation: 8,
           shadowColor: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.qr_code_scanner_rounded, size: 24),
+            const Icon(Icons.qr_code_scanner_rounded, size: 26),
             const SizedBox(width: 12),
             Text(
               'Scan Attendance',
-              style: GoogleFonts.lexend(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -384,27 +438,24 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingClassesHeader() {
+  Widget _buildUpcomingClassesHeader(ThemeData theme, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           'Upcoming Classes',
-          style: GoogleFonts.lexend(
+          style: theme.textTheme.titleLarge?.copyWith(
             fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFF0F172A),
+            fontWeight: FontWeight.w900,
           ),
         ),
         TextButton(
-          onPressed: () {
-            // Navigation handled by bottom bar
-          },
+          onPressed: () {},
           child: Text(
             'See All',
-            style: GoogleFonts.lexend(
+            style: theme.textTheme.labelLarge?.copyWith(
               fontSize: 14,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w900,
               color: ClassTrackTheme.primaryBlue,
             ),
           ),
@@ -413,14 +464,27 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildClassList() {
+  Widget _buildClassList(ThemeData theme, bool isDark) {
     if (upcomingSessions.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 32.0),
-          child: Text(
-            'No upcoming classes.',
-            style: GoogleFonts.lexend(color: const Color(0xFF64748B)),
+          padding: const EdgeInsets.symmetric(vertical: 40.0),
+          child: Column(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                size: 48,
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No upcoming sessions scheduled.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -433,8 +497,8 @@ class _DashboardHome extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: UpcomingClassCard(
             icon: Icons.school_rounded,
-            iconColor: const Color(0xFF6366F1),
-            iconBg: const Color(0xFFEEF2FF),
+            iconColor: ClassTrackTheme.primaryBlue,
+            iconBg: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
             title: session['topic'] ?? 'Class Session',
             time: DateFormat('h:mm a').format(startTime),
             location: session['room'] ?? 'N/A',
