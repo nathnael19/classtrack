@@ -154,6 +154,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
     required String studentId,
+    int? departmentId,
     UserRole role = UserRole.student,
   }) async {
     debugPrint('AuthCubit: register started for $email');
@@ -168,6 +169,7 @@ class AuthCubit extends Cubit<AuthState> {
           'password': password,
           'role': role == UserRole.lecturer ? 'lecturer' : 'student',
           'student_id': studentId,
+          'department_id': departmentId,
         },
       );
       debugPrint('AuthCubit: Registration successful, logging in...');
