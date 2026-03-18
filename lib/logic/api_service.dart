@@ -77,6 +77,11 @@ class ApiService {
     return response.data;
   }
 
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
+    final response = await dio.put(v1('/users/me'), data: data);
+    return response.data;
+  }
+
   Future<List<dynamic>> getActiveSessions() async {
     final response = await dio.get(v1('/sessions/active'));
     return response.data;
