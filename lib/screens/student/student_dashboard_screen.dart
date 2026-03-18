@@ -27,32 +27,78 @@ class StudentDashboardScreen extends StatefulWidget {
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   int _selectedIndex = 0;
   List<dynamic> _activeSessions = [];
+  List<dynamic> _upcomingSessions = [];
+  Map<String, dynamic>? _userData;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchActiveSessions();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() => _isLoading = true);
+    await Future.wait([
+      _fetchActiveSessions(),
+      _fetchUpcomingSessions(),
+      _fetchUserProfile(),
+    ]);
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _fetchUpcomingSessions() async {
+    try {
+      final api = ApiService();
+      final response = await api.getUpcomingSessions();
+      if (mounted) {
+        setState(() {
+          _upcomingSessions = response;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching upcoming sessions: $e');
+    }
+  }
+
+  Future<void> _fetchUserProfile() async {
+    try {
+      final api = ApiService();
+      final response = await api.getCurrentUser();
+      if (mounted) {
+        setState(() {
+          _userData = response;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+    }
   }
 
   Future<void> _fetchActiveSessions() async {
     try {
       final api = ApiService();
       final response = await api.dio.get(api.v1('/sessions/active'));
-      setState(() {
-        _activeSessions = response.data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _activeSessions = response.data;
+        });
+      }
     } catch (e) {
       debugPrint('Error fetching active sessions: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   List<Widget> _pages() => [
-    _DashboardHome(activeSessions: _activeSessions, isLoading: _isLoading, onRefresh: _fetchActiveSessions),
+    _DashboardHome(
+      activeSessions: _activeSessions,
+      upcomingSessions: _upcomingSessions,
+      userData: _userData,
+      isLoading: _isLoading,
+      onRefresh: _fetchDashboardData,
+    ),
     const ScheduleScreen(),
     const AttendanceHistoryScreen(),
     const ProfileScreen(),
@@ -196,11 +242,15 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
 class _DashboardHome extends StatelessWidget {
   final List<dynamic> activeSessions;
+  final List<dynamic> upcomingSessions;
+  final Map<String, dynamic>? userData;
   final bool isLoading;
   final Future<void> Function() onRefresh;
 
   const _DashboardHome({
     required this.activeSessions,
+    required this.upcomingSessions,
+    this.userData,
     required this.isLoading,
     required this.onRefresh,
   });
@@ -222,6 +272,8 @@ class _DashboardHome extends StatelessWidget {
       greeting = 'Good Evening';
     }
 
+    final String userName = userData?['name'] ?? 'Student';
+
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: onRefresh,
@@ -231,7 +283,7 @@ class _DashboardHome extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DashboardHeader(date: dateStr, greeting: '$greeting, Student'),
+              DashboardHeader(date: dateStr, greeting: '$greeting, $userName'),
               const SizedBox(height: 24),
               const AttendanceStatusCard(
                 percent: 0.85,
@@ -339,36 +391,33 @@ class _DashboardHome extends StatelessWidget {
   }
 
   Widget _buildClassList() {
-    return const Column(
-      children: [
-        UpcomingClassCard(
-          icon: Icons.code_rounded,
-          iconColor: Color(0xFF6366F1),
-          iconBg: Color(0xFFEEF2FF),
-          title: 'Software Engineering',
-          time: '1:00 PM',
-          location: 'Lab 305',
+    if (upcomingSessions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32.0),
+          child: Text(
+            'No upcoming classes.',
+            style: GoogleFonts.lexend(color: const Color(0xFF64748B)),
+          ),
         ),
-        SizedBox(height: 16),
-        UpcomingClassCard(
-          icon: Icons.storage_rounded,
-          iconColor: Color(0xFFF59E0B),
-          iconBg: Color(0xFFFFFBEB),
-          title: 'Database Systems',
-          time: '3:30 PM',
-          location: 'Main Hall B',
-        ),
-        SizedBox(height: 16),
-        UpcomingClassCard(
-          icon: Icons.language_rounded,
-          iconColor: Color(0xFF10B981),
-          iconBg: Color(0xFFECFDF5),
-          title: 'Web Technology',
-          time: 'Tomorrow • 09:00 AM',
-          location: 'Remote',
-          isOnline: true,
-        ),
-      ],
+      );
+    }
+
+    return Column(
+      children: upcomingSessions.map((session) {
+        final startTime = DateTime.parse(session['start_time']).toLocal();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: UpcomingClassCard(
+            icon: Icons.school_rounded,
+            iconColor: const Color(0xFF6366F1),
+            iconBg: const Color(0xFFEEF2FF),
+            title: session['topic'] ?? 'Class Session',
+            time: DateFormat('h:mm a').format(startTime),
+            location: session['room'] ?? 'N/A',
+          ),
+        );
+      }).toList(),
     );
   }
 }
