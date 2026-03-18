@@ -19,6 +19,8 @@ class _QRScannerScreenState extends State<QRScannerScreen>
   late AnimationController _animationController;
   late Animation<double> _animation;
   bool _isProcessing = false;
+  Map<String, dynamic>? _sessionData;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -35,6 +37,37 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     )..repeat(reverse: true);
 
     _animation = Tween<double>(begin: 0, end: 1).animate(_animationController);
+    _fetchSessionDetails();
+  }
+
+  Future<void> _fetchSessionDetails() async {
+    setState(() => _isLoading = true);
+    try {
+      final api = ApiService();
+      if (widget.sessionId != null) {
+        final data = await api.getSession(widget.sessionId!);
+        if (mounted) {
+          setState(() {
+            _sessionData = data;
+            _isLoading = false;
+          });
+        }
+      } else {
+        // Try to fetch active sessions if none provided
+        final active = await api.getActiveSessions();
+        if (active.isNotEmpty && mounted) {
+          setState(() {
+            _sessionData = active[0];
+            _isLoading = false;
+          });
+        } else {
+          if (mounted) setState(() => _isLoading = false);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching session details: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -63,10 +96,29 @@ class _QRScannerScreenState extends State<QRScannerScreen>
             },
           ),
 
-          if (_isProcessing)
-            const Center(
-              child: CircularProgressIndicator(
-                color: ClassTrackTheme.primaryBlue,
+          if (_isLoading || _isProcessing)
+            Center(
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const CircularProgressIndicator(
+                      color: ClassTrackTheme.primaryBlue,
+                    ),
+                    if (_isLoading) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading session...',
+                        style: GoogleFonts.lexend(color: Colors.white),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
 
@@ -207,7 +259,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Science Building - Room 402',
+                                _sessionData?['room'] ?? (_isLoading ? 'Loading...' : 'Unknown Location'),
                                 style: GoogleFonts.lexend(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -216,13 +268,16 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                'INSIDE GEOFENCE',
+                                _sessionData != null 
+                                  ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ACTIVE SESSION')
+                                  : (_isLoading ? 'FETCHING DATA...' : 'NO ACTIVE SESSION'),
                                 style: GoogleFonts.lexend(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF10B981),
+                                  color: _sessionData != null ? const Color(0xFF10B981) : Colors.orangeAccent,
                                   letterSpacing: 0.5,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -265,14 +320,16 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     try {
       final api = ApiService();
 
-      if (widget.sessionId == null) {
+      final idToMark = widget.sessionId ?? (_sessionData != null ? _sessionData!['id'] : null);
+
+      if (idToMark == null) {
         throw Exception("No active session selected to mark attendance.");
       }
 
       await api.dio.post(
         api.v1('/attendance/mark'),
         data: {
-          'session_id': widget.sessionId,
+          'session_id': idToMark,
           'qr_code_content': code,
           'latitude': 0.0, // Mock location
           'longitude': 0.0,
