@@ -69,4 +69,9 @@ class ApiService {
     final response = await dio.get(v1('/sessions/active'));
     return response.data;
   }
+
+  Future<Map<String, dynamic>> getAttendanceSummary() async {
+    final response = await dio.get(v1('/attendance/summary'));
+    return response.data;
+  }
 }
