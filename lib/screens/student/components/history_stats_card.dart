@@ -165,5 +165,5 @@ class AttendanceTrendChart extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant AttendanceTrendChart oldDelegate) => oldDelegate.points != points;
 }
