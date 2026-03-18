@@ -6,6 +6,7 @@ import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/logic/cubits/theme/theme_cubit.dart';
+import 'package:classtrack/logic/cubits/attendance/attendance_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -21,6 +22,7 @@ void main() async {
         BlocProvider(create: (context) => OnboardingCubit(prefs: prefs)),
         BlocProvider(create: (context) => AuthCubit(prefs: prefs)),
         BlocProvider(create: (context) => ThemeCubit(prefs: prefs)),
+        BlocProvider(create: (context) => AttendanceCubit()..fetchAllData()),
       ],
       child: const ClassTrackApp(),
     ),
