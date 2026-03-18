@@ -72,9 +72,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             children: [
               _buildAppBar(context),
               const SizedBox(height: 32),
-              _isLoading 
-                ? const Center(child: CircularProgressIndicator())
-                : _buildProfileHeader(),
+              _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildProfileHeader(),
               const SizedBox(height: 32),
               _buildSettingsSection(context),
               const SizedBox(height: 24),
@@ -107,7 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => EditProfileScreen(userData: _userData!),
+                      builder: (context) =>
+                          EditProfileScreen(userData: _userData!),
                     ),
                   );
                   if (result == true) {
@@ -116,11 +117,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }
               },
               icon: const Icon(Icons.edit_outlined),
-              color: const Color(0xFF0F172A),
-            ),
-            IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.more_horiz_rounded),
               color: const Color(0xFF0F172A),
             ),
           ],
@@ -245,24 +241,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               letterSpacing: 1,
             ),
           ),
-        ),
-        _buildSettingsItem(
-          icon: Icons.person_outline_rounded,
-          iconColor: const Color(0xFF6366F1),
-          title: 'Update Profile',
-          onTap: () async {
-            if (_userData != null) {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditProfileScreen(userData: _userData!),
-                ),
-              );
-              if (result == true) {
-                _fetchProfile();
-              }
-            }
-          },
         ),
         _buildSettingsItem(
           icon: Icons.settings_outlined,
