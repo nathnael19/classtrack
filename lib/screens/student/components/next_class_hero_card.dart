@@ -6,6 +6,7 @@ class NextClassHeroCard extends StatelessWidget {
   final String time;
   final String location;
   final String geofenceStatus;
+  final bool isPresent;
   final VoidCallback onViewMap;
 
   const NextClassHeroCard({
@@ -14,6 +15,7 @@ class NextClassHeroCard extends StatelessWidget {
     required this.time,
     required this.location,
     required this.geofenceStatus,
+    this.isPresent = false,
     required this.onViewMap,
   });
 
@@ -67,11 +69,11 @@ class NextClassHeroCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Icon(
-                Icons.school_outlined,
-                color: Colors.white.withValues(alpha: 0.3),
-                size: 40,
-              ),
+                Icon(
+                  isPresent ? Icons.verified_rounded : Icons.school_outlined,
+                  color: Colors.white.withValues(alpha: isPresent ? 0.9 : 0.3),
+                  size: 40,
+                ),
             ],
           ),
           const SizedBox(height: 20),
@@ -135,7 +137,7 @@ class NextClassHeroCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    geofenceStatus,
+                    isPresent ? 'Attendance Marked' : geofenceStatus,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.white,
                       fontSize: 13,
@@ -144,7 +146,6 @@ class NextClassHeroCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (onViewMap != null)
                 TextButton(
                   onPressed: onViewMap,
                   style: TextButton.styleFrom(
