@@ -157,8 +157,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   // App Title
                   Text(
                     'ClassTrack',
-                    style: ClassTrackTheme.lightTheme.textTheme.displayLarge
-                        ?.copyWith(
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
                           color: Colors.white,
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
@@ -169,8 +168,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   // App Subtitle
                   Text(
                     'Secure Smart Attendance',
-                    style: ClassTrackTheme.lightTheme.textTheme.bodyLarge
-                        ?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.5),
                           fontSize: 20,
                           fontWeight: FontWeight.w300,
@@ -189,8 +187,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   const SizedBox(height: 16),
                   Text(
                     'INITIALIZING',
-                    style: ClassTrackTheme.lightTheme.textTheme.labelLarge
-                        ?.copyWith(
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.6),
                           letterSpacing: 4,
                           fontSize: 12,
@@ -203,8 +200,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: Text(
                       'v2.4.0 • Powered by Geofencing',
-                      style: ClassTrackTheme.lightTheme.textTheme.bodySmall
-                          ?.copyWith(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                           ),
