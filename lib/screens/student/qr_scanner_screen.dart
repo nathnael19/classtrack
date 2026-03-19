@@ -369,7 +369,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
       // 2. Fetch Real GPS Coordinates
       final Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        desiredAccuracy: LocationAccuracy.medium,
         timeLimit: const Duration(seconds: 15),
       );
 
@@ -403,8 +403,16 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     } catch (e) {
       debugPrint('Attendance Marking Error: $e');
       String errorMsg = 'Failed to process attendance';
+      
       if (e is DioException) {
-        errorMsg = e.response?.data['detail']?.toString() ?? errorMsg;
+        if (e.type == DioExceptionType.connectionTimeout || 
+            e.type == DioExceptionType.receiveTimeout) {
+          errorMsg = 'Server connection timed out. Please check your internet.';
+        } else {
+          errorMsg = e.response?.data['detail']?.toString() ?? errorMsg;
+        }
+      } else if (e.toString().contains('TimeoutException')) {
+        errorMsg = 'GPS signal too weak. Please try moving closer to a window or door.';
       } else if (e is Exception) {
         errorMsg = e.toString().replaceFirst('Exception: ', '');
       }
