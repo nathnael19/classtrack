@@ -269,16 +269,41 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                _sessionData != null 
-                                  ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ONGOING SESSION')
-                                  : (_isLoading ? 'SYNCHRONIZING...' : 'NO ACTIVE SESSION'),
-                                style: theme.textTheme.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: _sessionData != null ? const Color(0xFF10B981) : Colors.amberAccent,
-                                  letterSpacing: 1.2,
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      _sessionData != null 
+                                        ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ONGOING SESSION')
+                                        : (_isLoading ? 'SYNCHRONIZING...' : 'NO ACTIVE SESSION'),
+                                      style: theme.textTheme.labelLarge?.copyWith(
+                                        fontWeight: FontWeight.w900,
+                                        color: _sessionData != null ? const Color(0xFF10B981) : Colors.amberAccent,
+                                        letterSpacing: 1.2,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (_sessionData?['section'] != null) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                                      ),
+                                      child: Text(
+                                        'SEC ${_sessionData?['section']}',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w900,
+                                          color: const Color(0xFF10B981),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
