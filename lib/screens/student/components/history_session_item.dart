@@ -3,6 +3,7 @@ import '../../../theme/design_theme.dart';
 
 class HistorySessionItem extends StatelessWidget {
   final String course;
+  final String? section;
   final String dateTime;
   final String status;
   final IconData icon;
@@ -11,6 +12,7 @@ class HistorySessionItem extends StatelessWidget {
   const HistorySessionItem({
     super.key,
     required this.course,
+    this.section,
     required this.dateTime,
     required this.status,
     required this.icon,
@@ -41,12 +43,36 @@ class HistorySessionItem extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    course,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          course,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                      if (section != null && section!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Sec $section',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: ClassTrackTheme.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
