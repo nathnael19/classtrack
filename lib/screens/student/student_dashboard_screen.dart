@@ -263,6 +263,7 @@ class _DashboardHome extends StatelessWidget {
             else if (activeSessions.isNotEmpty)
               NextClassHeroCard(
                 title: activeSessions[0]['course_name'] ?? 'Active Session',
+                section: activeSessions[0]['section'],
                 time: 'NOW',
                 location: activeSessions[0]['room'] ?? 'N/A',
                 geofenceStatus: 'Ongoing Session',
@@ -430,6 +431,7 @@ class _DashboardHome extends StatelessWidget {
             iconColor: ClassTrackTheme.primaryBlue,
             iconBg: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
             title: session['topic'] ?? 'Class Session',
+            section: session['section'],
             time: DateFormat('h:mm a').format(startTime),
             location: session['room'] ?? 'N/A',
           ),
