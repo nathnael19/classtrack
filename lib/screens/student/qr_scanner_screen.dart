@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/logic/api_service.dart';
 import 'package:dio/dio.dart';
@@ -348,18 +349,40 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         throw Exception('No active session identified.');
       }
 
-      // Use the session's stored coordinates so geofence passes during development.
-      // TODO: Replace with real GPS (geolocator package) when available.
-      final double lat = (_sessionData?['latitude'] as num?)?.toDouble() ?? 0.0;
-      final double lng = (_sessionData?['longitude'] as num?)?.toDouble() ?? 0.0;
+      // 1. Check Location Services & Permissions
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw Exception('Location services are disabled. Please enable GPS.');
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw Exception('Location permissions are denied');
+        }
+      }
+      
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception('Location permissions are permanently denied, we cannot request permissions.');
+      }
+
+      // 2. Fetch Real GPS Coordinates
+      final Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 15),
+      );
+
+      final double currentLat = position.latitude;
+      final double currentLng = position.longitude;
 
       await api.dio.post(
         api.v1('/attendance/mark'),
         data: {
           'session_id': idToMark,
           'qr_code_content': token, // Send only the HMAC token
-          'latitude': lat,
-          'longitude': lng,
+          'latitude': currentLat,
+          'longitude': currentLng,
         },
       );
 
