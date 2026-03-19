@@ -6,6 +6,7 @@ class UpcomingClassCard extends StatelessWidget {
   final Color iconColor;
   final Color iconBg;
   final String title;
+  final String? section;
   final String time;
   final String location;
   final bool isOnline;
@@ -16,6 +17,7 @@ class UpcomingClassCard extends StatelessWidget {
     required this.iconColor,
     required this.iconBg,
     required this.title,
+    this.section,
     required this.time,
     required this.location,
     this.isOnline = false,
@@ -44,12 +46,36 @@ class UpcomingClassCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      if (section != null && section!.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Sec $section',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: ClassTrackTheme.primaryBlue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Row(
