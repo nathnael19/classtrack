@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -105,6 +106,19 @@ class ApiService {
 
   Future<List<dynamic>> getDepartments() async {
     final response = await dio.get(v1('/departments/'));
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> uploadProfilePicture(File file) async {
+    String fileName = file.path.split('/').last;
+    FormData formData = FormData.fromMap({
+      "file": await MultipartFile.fromFile(file.path, filename: fileName),
+    });
+
+    final response = await dio.post(
+      v1('/users/me/profile-picture'),
+      data: formData,
+    );
     return response.data;
   }
 }
