@@ -183,6 +183,7 @@ class AuthCubit extends Cubit<AuthState> {
     required String email,
     required String password,
     required String studentId,
+    String? section,
     int? departmentId,
     UserRole role = UserRole.student,
   }) async {
@@ -199,6 +200,7 @@ class AuthCubit extends Cubit<AuthState> {
           'role': role == UserRole.lecturer ? 'lecturer' : 'student',
           'student_id': studentId,
           'department_id': departmentId,
+          'section': section,
         },
       );
       debugPrint('AuthCubit: Registration successful, logging in...');
