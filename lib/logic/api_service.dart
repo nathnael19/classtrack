@@ -11,7 +11,7 @@ class ApiService {
       baseUrl:
           'http://10.240.140.40:8000', // Root for auth/token, will add /api/v1 prefix for others
       connectTimeout: const Duration(seconds: 5),
-      receiveTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 20),
     ),
   );
 
