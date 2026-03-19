@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nameController = TextEditingController();
   final _idController = TextEditingController();
   final _emailController = TextEditingController();
+  final _sectionController = TextEditingController();
   final _passwordController = TextEditingController();
   List<dynamic> _departments = [];
   int? _selectedDepartmentId;
@@ -51,6 +52,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _nameController.dispose();
     _idController.dispose();
     _emailController.dispose();
+    _sectionController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -59,11 +61,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final name = _nameController.text.trim();
     final studentId = _idController.text.trim();
     final email = _emailController.text.trim();
+    final section = _sectionController.text.trim();
     final password = _passwordController.text;
 
     if (name.isEmpty ||
         studentId.isEmpty ||
         email.isEmpty ||
+        section.isEmpty ||
         password.isEmpty) {
       debugPrint('Registration: Validation failed - empty fields');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,6 +83,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       email: email,
       password: password,
       studentId: studentId,
+      section: section,
       departmentId: _selectedDepartmentId,
     );
   }
@@ -184,6 +189,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   _buildLabel('Department'),
                   _buildDepartmentDropdown(),
+                  const SizedBox(height: 20),
+
+                  _buildLabel('Section'),
+                  _buildTextField(
+                    controller: _sectionController,
+                    hintText: 'e.g. Section A',
+                    icon: Icons.groups_outlined,
+                  ),
                   const SizedBox(height: 20),
 
                   _buildLabel('University Email'),
