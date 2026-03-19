@@ -197,6 +197,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
 
                                 return HistorySessionItem(
                                   course: record['course_name'] ?? 'Unknown Course',
+                                  section: record['section'],
                                   dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
                                   status: status,
                                   icon: Icons.class_outlined,
