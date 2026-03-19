@@ -16,7 +16,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  File? _profileImage;
   final ImagePicker _picker = ImagePicker();
   Map<String, dynamic>? _userData;
   bool _isLoading = true;
@@ -48,9 +47,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
+        setState(() => _isLoading = true);
+        final api = ApiService();
+        final response = await api.uploadProfilePicture(File(image.path));
+        
         setState(() {
-          _profileImage = File(image.path);
+          _userData = response;
+          _isLoading = false;
         });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile picture updated successfully')),
+          );
+        }
       }
     } catch (e) {
       if (!currentContext.mounted) return;
@@ -144,8 +154,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: CircleAvatar(
                 radius: 65,
                 backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
-                backgroundImage: _profileImage != null
-                    ? FileImage(_profileImage!) as ImageProvider
+                backgroundImage: _userData?['profile_picture_url'] != null
+                    ? NetworkImage(
+                        '${ApiService().dio.options.baseUrl}${_userData!['profile_picture_url']}',
+                      ) as ImageProvider
                     : const NetworkImage(
                         'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
                       ),
