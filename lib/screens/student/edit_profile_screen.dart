@@ -15,6 +15,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _emailController;
+  late TextEditingController _phoneController;
+  late TextEditingController _programController;
+  late TextEditingController _enrollmentYearController;
+  late TextEditingController _emergencyNameController;
+  late TextEditingController _emergencyPhoneController;
   late TextEditingController _currentPasswordController;
   late TextEditingController _newPasswordController;
   late TextEditingController _confirmPasswordController;
@@ -22,6 +27,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   List<dynamic> _departments = [];
   int? _selectedDepartmentId;
+  String? _selectedGender;
   bool _isLoadingDepts = true;
   bool _isSaving = false;
   bool _obscureCurrent = true;
@@ -33,10 +39,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.userData['name']);
     _emailController = TextEditingController(text: widget.userData['email']);
+    _phoneController = TextEditingController(text: widget.userData['phone_number']);
+    _programController = TextEditingController(text: widget.userData['program']);
+    _enrollmentYearController = TextEditingController(text: widget.userData['enrollment_year']?.toString());
+    _emergencyNameController = TextEditingController(text: widget.userData['emergency_contact_name']);
+    _emergencyPhoneController = TextEditingController(text: widget.userData['emergency_contact_phone']);
     _currentPasswordController = TextEditingController();
     _newPasswordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
     _selectedDepartmentId = widget.userData['department_id'];
+    _selectedGender = widget.userData['gender'];
     _fetchDepartments();
   }
 
@@ -61,6 +73,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
+    _programController.dispose();
+    _enrollmentYearController.dispose();
+    _emergencyNameController.dispose();
+    _emergencyPhoneController.dispose();
     _currentPasswordController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
@@ -77,6 +94,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'department_id': _selectedDepartmentId,
+        'phone_number': _phoneController.text.trim(),
+        'program': _programController.text.trim(),
+        'enrollment_year': int.tryParse(_enrollmentYearController.text.trim()),
+        'emergency_contact_name': _emergencyNameController.text.trim(),
+        'emergency_contact_phone': _emergencyPhoneController.text.trim(),
+        'gender': _selectedGender,
       };
 
       if (_newPasswordController.text.isNotEmpty) {
@@ -170,6 +193,57 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     const SizedBox(height: 24),
                     _buildLabel(theme, 'Department'),
                     _buildDepartmentDropdown(theme, isDark),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Program / Major'),
+                    _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
+                      controller: _programController,
+                      hintText: 'e.g. Computer Science',
+                      icon: Icons.school_rounded,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Enrollment Year'),
+                    _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
+                      controller: _enrollmentYearController,
+                      hintText: 'e.g. 2026',
+                      icon: Icons.calendar_today_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Phone Number'),
+                    _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
+                      controller: _phoneController,
+                      hintText: '+1 234 567 8900',
+                      icon: Icons.phone_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Gender'),
+                    _buildGenderDropdown(theme, isDark),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Emergency Contact Name'),
+                    _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
+                      controller: _emergencyNameController,
+                      hintText: 'Parent / Guardian',
+                      icon: Icons.health_and_safety_rounded,
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLabel(theme, 'Emergency Contact Phone'),
+                    _buildTextField(
+                      theme: theme,
+                      isDark: isDark,
+                      controller: _emergencyPhoneController,
+                      hintText: '+1 999 999 9999',
+                      icon: Icons.contact_phone_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
                     const SizedBox(height: 32),
                     Divider(
                       color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9), 
@@ -370,6 +444,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: Colors.white,
                 ),
               ),
+      ),
+    );
+  }
+
+  Widget _buildGenderDropdown(ThemeData theme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedGender,
+          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          hint: Text(
+            'Select Gender',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF94A3B8),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          isExpanded: true,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),
+          items: ['Male', 'Female', 'Other', 'Prefer Not to Say'].map((gender) {
+            return DropdownMenuItem<String>(
+              value: gender,
+              child: Text(
+                gender,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: (val) {
+            setState(() => _selectedGender = val);
+          },
+        ),
       ),
     );
   }
