@@ -109,6 +109,11 @@ class ApiService {
     return response.data;
   }
 
+  Future<List<dynamic>> getRecurringSchedules() async {
+    final response = await dio.get(v1('/schedules/mine'));
+    return response.data;
+  }
+
   Future<Map<String, dynamic>> uploadProfilePicture(File file) async {
     String fileName = file.path.split('/').last;
     FormData formData = FormData.fromMap({
