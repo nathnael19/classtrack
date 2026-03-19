@@ -16,6 +16,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   late List<Map<String, String>> _days;
   late DateTime _anchorDate; // The date used to determine which week to show
   List<dynamic> _sessions = [];
+  List<dynamic> _recurringSchedules = [];
   bool _isLoading = true;
   final ApiService _api = ApiService();
 
@@ -37,14 +38,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       final monday = DateTime.parse(_days[0]['fullDate']!);
       final sunday = DateTime.parse(_days[6]['fullDate']!).add(const Duration(hours: 23, minutes: 59));
       
-      final sessions = await _api.getSessions(
-        startDate: monday,
-        endDate: sunday,
-      );
+      // Fetch both specific sessions and recurring schedules
+      final results = await Future.wait([
+        _api.getSessions(startDate: monday, endDate: sunday),
+        _api.getRecurringSchedules(),
+      ]);
       
       if (mounted) {
         setState(() {
-          _sessions = sessions;
+          _sessions = results[0];
+          _recurringSchedules = results[1];
           _isLoading = false;
         });
       }
@@ -265,13 +268,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   List<Widget> _buildTimelineSessions(ThemeData theme, bool isDark) {
-    final selectedDate = _days[_selectedDayIndex]['fullDate'];
+    final selectedDateString = _days[_selectedDayIndex]['fullDate']!;
+    final selectedDate = DateTime.parse(selectedDateString);
+    // backend day_of_week is 0 for Monday, frontend weekday is 1 for Monday
+    final selectedDayOfWeek = selectedDate.weekday - 1; 
+
+    // Filter specific sessions for this day
     final daySessions = _sessions.where((s) {
       final startTime = DateTime.parse(s['start_time']).toLocal();
-      return DateFormat('yyyy-MM-dd').format(startTime) == selectedDate;
+      return DateFormat('yyyy-MM-dd').format(startTime) == selectedDateString;
     }).toList();
 
-    if (daySessions.isEmpty) {
+    // Filter recurring schedules for this day
+    final dayRecurring = _recurringSchedules.where((s) {
+      return s['day_of_week'] == selectedDayOfWeek;
+    }).toList();
+
+    if (daySessions.isEmpty && dayRecurring.isEmpty) {
       return [
         const SizedBox(height: 60),
         Center(
@@ -286,9 +299,48 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       ];
     }
 
-    daySessions.sort((a, b) => a['start_time'].compareTo(b['start_time']));
+    // Combine and sort
+    // For recurring schedules, we create a pseudo-session for display
+    final List<Map<String, dynamic>> combined = [];
+    
+    // Add real sessions
+    for (var s in daySessions) {
+      combined.add({
+        ...s,
+        'isRecurring': false,
+        'sortTime': s['start_time'],
+      });
+    }
 
-    return daySessions.map((session) {
+    // Add recurring slots if no session exists for that time/course (simple heuristic)
+    for (var r in dayRecurring) {
+      final startTimeStr = '${selectedDateString}T${r['start_time']}';
+      final endTimeStr = '${selectedDateString}T${r['end_time']}';
+      
+      // Check if a session already exists for this course and time
+      bool exists = daySessions.any((s) => 
+        s['course_id'] == r['course_id'] && 
+        s['start_time'].contains(r['start_time'])
+      );
+
+      if (!exists) {
+        combined.add({
+          'topic': 'Recurring Tactical Session',
+          'start_time': startTimeStr,
+          'end_time': endTimeStr,
+          'room': r['room'],
+          'section': r['section'],
+          'course_name': r['course_name'], // Assuming backend returns this
+          'lecturer_name': r['lecturer_name'],
+          'isRecurring': true,
+          'sortTime': startTimeStr,
+        });
+      }
+    }
+
+    combined.sort((a, b) => a['sortTime'].compareTo(b['sortTime']));
+
+    return combined.map((session) {
       final startTime = DateTime.parse(session['start_time']).toLocal();
       final endTime = DateTime.parse(session['end_time']).toLocal();
       final now = DateTime.now();
@@ -307,11 +359,15 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         time: DateFormat('HH:mm').format(startTime),
         status: timelineStatus,
         child: ClassCard(
-          title: session['topic'] ?? 'Untitled Session',
+          title: session['course_name'] != null 
+              ? '${session['course_name']}: ${session['topic']}' 
+              : session['topic'] ?? 'Untitled Session',
           time: '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)}',
-          location: session['room'] ?? 'N/A',
+          location: session['room'] != null ? 
+              (session['section'] != null ? '${session['room']} (Sec: ${session['section']})' : session['room']) 
+              : 'N/A',
           lecturer: session['lecturer_name'] ?? 'N/A',
-          status: now.isAfter(endTime) ? ClassStatus.completed : ClassStatus.upcoming,
+          status: session['isRecurring'] == true ? ClassStatus.recurring : (now.isAfter(endTime) ? ClassStatus.completed : ClassStatus.upcoming),
           isHighlighted: timelineStatus == TimelineStatus.active,
         ),
       );
@@ -489,7 +545,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
 enum TimelineStatus { completed, active, upcoming }
 
-enum ClassStatus { completed, upcoming }
+enum ClassStatus { completed, upcoming, recurring }
 
 class ClassCard extends StatelessWidget {
   final String title;
@@ -605,28 +661,37 @@ class ClassCard extends StatelessWidget {
   }
 
   Widget _buildStatusTag(ThemeData theme) {
-    final bool isCompleted = status == ClassStatus.completed;
     final isDark = theme.brightness == Brightness.dark;
+    String label = 'UPCOMING';
+    Color bgColor = const Color(0xFFEEF2FF).withValues(alpha: isDark ? 0.2 : 1.0);
+    Color textColor = const Color(0xFF4F46E5);
+    Color borderColor = const Color(0xFF6366F1).withValues(alpha: 0.3);
+
+    if (status == ClassStatus.completed) {
+      label = 'COMPLETED';
+      bgColor = const Color(0xFFD1FAE5).withValues(alpha: isDark ? 0.2 : 1.0);
+      textColor = const Color(0xFF059669);
+      borderColor = const Color(0xFF10B981).withValues(alpha: 0.3);
+    } else if (status == ClassStatus.recurring) {
+      label = 'RECURRING';
+      bgColor = const Color(0xFFFEF3C7).withValues(alpha: isDark ? 0.2 : 1.0);
+      textColor = const Color(0xFFD97706);
+      borderColor = const Color(0xFFF59E0B).withValues(alpha: 0.3);
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isCompleted 
-          ? const Color(0xFFD1FAE5).withValues(alpha: isDark ? 0.2 : 1.0) 
-          : const Color(0xFFEEF2FF).withValues(alpha: isDark ? 0.2 : 1.0),
+        color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: isDark ? Border.all(
-          color: isCompleted ? const Color(0xFF10B981).withValues(alpha: 0.3) : const Color(0xFF6366F1).withValues(alpha: 0.3),
-        ) : null,
+        border: isDark ? Border.all(color: borderColor) : null,
       ),
       child: Text(
-        isCompleted ? 'COMPLETED' : 'UPCOMING',
+        label,
         style: theme.textTheme.labelSmall?.copyWith(
           fontSize: 10,
           fontWeight: FontWeight.w900,
-          color: isCompleted
-              ? const Color(0xFF059669)
-              : const Color(0xFF4F46E5),
+          color: textColor,
           letterSpacing: 0.5,
         ),
       ),
