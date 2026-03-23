@@ -590,25 +590,38 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
-              title: const Text('Request Leave'),
-              subtitle: const Text('Submit a leave request for this session'),
-              onTap: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RequestLeaveScreen(session: session),
+            if (session['status'] == ClassStatus.completed || (session['isRecurring'] == false && DateTime.parse(session['end_time']).toLocal().isBefore(DateTime.now())))
+              ListTile(
+                leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
+                title: const Text('Request Leave'),
+                subtitle: const Text('Submit a leave request for this session'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RequestLeaveScreen(session: session),
+                    ),
+                  ).then((result) {
+                    if (result == true && context.mounted) {
+                      // Trigger a refresh of the cubit if available globally
+                      context.read<AttendanceCubit>().refresh();
+                    }
+                  });
+                },
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Leave requests are only available after the session ends.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.hintColor,
+                    fontStyle: FontStyle.italic,
                   ),
-                ).then((result) {
-                  if (result == true && context.mounted) {
-                    // Trigger a refresh of the cubit if available globally
-                    context.read<AttendanceCubit>().refresh();
-                  }
-                });
-              },
-            ),
+                ),
+              ),
           ],
         ),
       ),
