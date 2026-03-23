@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/logic/api_service.dart';
+import 'package:classtrack/logic/device_helper.dart';
 import 'package:dio/dio.dart';
 
 class QRScannerScreen extends StatefulWidget {
@@ -401,15 +402,16 @@ class _QRScannerScreenState extends State<QRScannerScreen>
       final double currentLat = position.latitude;
       final double currentLng = position.longitude;
 
-      await api.dio.post(
-        api.v1('/attendance/mark'),
-        data: {
-          'session_id': idToMark,
-          'qr_code_content': token, // Send only the HMAC token
-          'latitude': currentLat,
-          'longitude': currentLng,
-        },
-      );
+      final deviceInfo = await getDeviceInfo();
+      final payload = {
+        'session_id': idToMark,
+        'qr_code_content': token,
+        'latitude': currentLat,
+        'longitude': currentLng,
+        'device_fingerprint': deviceInfo['device_id'],
+      };
+
+      await api.dio.post(api.v1('/attendance/mark'), data: payload);
 
       controller.stop();
       if (!mounted) return;
