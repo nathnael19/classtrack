@@ -9,9 +9,10 @@ class ApiService {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl:
-          'http://10.240.140.40:8000', // Root for auth/token, will add /api/v1 prefix for others
+          'http://10.240.41.67:8000', // Root for auth/token, will add /api/v1 prefix for others
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 20),
+      //http://10.240.41.67:8000/
     ),
   );
 
@@ -52,22 +53,22 @@ class ApiService {
   }
 
   Future<List<dynamic>> getAttendanceHistory() async {
-    final response = await dio.get(v1('/attendance/history'));
+    final response = await dio.get(v1('/attendance/history/'));
     return response.data;
   }
 
   Future<List<dynamic>> getUpcomingSessions() async {
-    final response = await dio.get(v1('/sessions/upcoming'));
+    final response = await dio.get(v1('/sessions/upcoming/'));
     return response.data;
   }
 
   Future<Map<String, dynamic>> getCurrentUser() async {
-    final response = await dio.get(v1('/users/me'));
+    final response = await dio.get(v1('/users/me/'));
     return response.data;
   }
 
   Future<Map<String, dynamic>> getSession(int id) async {
-    final response = await dio.get(v1('/sessions/$id'));
+    final response = await dio.get(v1('/sessions/$id/'));
     return response.data;
   }
 
@@ -90,17 +91,17 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
-    final response = await dio.put(v1('/users/me'), data: data);
+    final response = await dio.put(v1('/users/me/'), data: data);
     return response.data;
   }
 
   Future<List<dynamic>> getActiveSessions() async {
-    final response = await dio.get(v1('/sessions/active'));
+    final response = await dio.get(v1('/sessions/active/'));
     return response.data;
   }
 
   Future<Map<String, dynamic>> getAttendanceSummary() async {
-    final response = await dio.get(v1('/attendance/summary'));
+    final response = await dio.get(v1('/attendance/summary/'));
     return response.data;
   }
 
@@ -110,7 +111,7 @@ class ApiService {
   }
 
   Future<List<dynamic>> getRecurringSchedules() async {
-    final response = await dio.get(v1('/schedules/mine'));
+    final response = await dio.get(v1('/schedules/mine/'));
     return response.data;
   }
 
@@ -121,14 +122,14 @@ class ApiService {
     });
 
     final response = await dio.post(
-      v1('/users/me/profile-picture'),
+      v1('/users/me/profile-picture/'),
       data: formData,
     );
     return response.data;
   }
 
   Future<List<dynamic>> getLeaveRequests() async {
-    final response = await dio.get(v1('/leave_requests'));
+    final response = await dio.get(v1('/leave_requests/'));
     return response.data;
   }
 
@@ -139,7 +140,7 @@ class ApiService {
     final user = await getCurrentUser();
     final studentId = user['id'] as int;
     final response = await dio.post(
-      v1('/device_fingerprints'),
+      v1('/device_fingerprints/'),
       data: {
         'student_id': studentId,
         'device_id': deviceId,
@@ -155,11 +156,12 @@ class ApiService {
     String? documentUrl,
   }) async {
     final response = await dio.post(
-      v1('/leave_requests'),
+      v1('/leave_requests/'),
       data: {
         'session_id': sessionId,
         'reason': reason,
-        if (documentUrl != null && documentUrl.isNotEmpty) 'document_url': documentUrl,
+        if (documentUrl != null && documentUrl.isNotEmpty)
+          'document_url': documentUrl,
       },
     );
     return response.data;

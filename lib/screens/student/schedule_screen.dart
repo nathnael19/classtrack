@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../theme/design_theme.dart';
 import '../../logic/api_service.dart';
+import 'request_leave_screen.dart';
+import '../../logic/cubits/attendance/attendance_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -369,6 +372,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           lecturer: session['lecturer_name'] ?? 'N/A',
           status: session['isRecurring'] == true ? ClassStatus.recurring : (now.isAfter(endTime) ? ClassStatus.completed : ClassStatus.upcoming),
           isHighlighted: timelineStatus == TimelineStatus.active,
+          onTap: () => _showSessionOptions(context, session),
         ),
       );
     }).toList();
@@ -541,6 +545,75 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         );
     }
   }
+
+  void _showSessionOptions(BuildContext context, Map<String, dynamic> session) {
+    if (session['isRecurring'] == true) {
+      // For recurring slots without real sessions, we might not have a session_id
+      // In that case, we can't create a leave request yet.
+      if (session['id'] == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cannot request leave for a recurring slot without a scheduled session.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+    }
+
+    final theme = Theme.of(context);
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              session['course_name'] ?? 'Class Session',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
+              title: const Text('Request Leave'),
+              subtitle: const Text('Submit a leave request for this session'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RequestLeaveScreen(session: session),
+                  ),
+                ).then((result) {
+                  if (result == true && context.mounted) {
+                    // Trigger a refresh of the cubit if available globally
+                    context.read<AttendanceCubit>().refresh();
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 enum TimelineStatus { completed, active, upcoming }
@@ -554,6 +627,7 @@ class ClassCard extends StatelessWidget {
   final String lecturer;
   final ClassStatus status;
   final bool isHighlighted;
+  final VoidCallback? onTap;
 
   const ClassCard({
     super.key,
@@ -563,6 +637,7 @@ class ClassCard extends StatelessWidget {
     required this.lecturer,
     required this.status,
     this.isHighlighted = false,
+    this.onTap,
   });
 
   @override
@@ -571,16 +646,9 @@ class ClassCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isHighlighted 
-            ? ClassTrackTheme.primaryBlue.withValues(alpha: 0.5)
-            : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
-          width: isHighlighted ? 2 : 1,
-        ),
         boxShadow: isDark ? [] : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -589,73 +657,92 @@ class ClassCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(24),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isHighlighted 
+                  ? ClassTrackTheme.primaryBlue.withValues(alpha: 0.5)
+                  : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                width: isHighlighted ? 2 : 1,
               ),
-              const SizedBox(width: 8),
-              _buildStatusTag(theme),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            time,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildStatusTag(theme),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  time,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: ClassTrackTheme.primaryBlue,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      location,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Icon(
+                      Icons.person_outline_rounded,
+                      size: 16,
+                      color: Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        lecturer,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 16,
-                color: ClassTrackTheme.primaryBlue,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                location,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Icon(
-                Icons.person_outline_rounded,
-                size: 16,
-                color: Color(0xFF64748B),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  lecturer,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
