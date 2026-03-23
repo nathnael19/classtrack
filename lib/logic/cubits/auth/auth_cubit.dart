@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:classtrack/logic/api_service.dart';
+import 'package:classtrack/logic/device_helper.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated }
 
@@ -153,7 +154,22 @@ class AuthCubit extends Cubit<AuthState> {
       debugPrint('AuthCubit: User info fetched, role: $roleStr');
       await prefs.setBool('is_logged_in', true);
       await prefs.setString('user_role', roleStr);
-      
+
+      // Register device fingerprint for students (background, non-blocking)
+      if (roleStr == 'student') {
+        getDeviceInfo().then((info) async {
+          try {
+            await api.registerDevice(
+              deviceId: info['device_id']!,
+              deviceModel: info['device_model'],
+            );
+            debugPrint('AuthCubit: Device registered successfully');
+          } catch (e) {
+            debugPrint('AuthCubit: Device registration failed: $e');
+          }
+        });
+      }
+
       emit(
         state.copyWith(
           status: AuthStatus.authenticated,
