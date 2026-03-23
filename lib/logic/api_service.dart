@@ -126,4 +126,42 @@ class ApiService {
     );
     return response.data;
   }
+
+  Future<List<dynamic>> getLeaveRequests() async {
+    final response = await dio.get(v1('/leave_requests'));
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> registerDevice({
+    required String deviceId,
+    String? deviceModel,
+  }) async {
+    final user = await getCurrentUser();
+    final studentId = user['id'] as int;
+    final response = await dio.post(
+      v1('/device_fingerprints'),
+      data: {
+        'student_id': studentId,
+        'device_id': deviceId,
+        if (deviceModel != null) 'device_model': deviceModel,
+      },
+    );
+    return response.data;
+  }
+
+  Future<Map<String, dynamic>> createLeaveRequest({
+    required int sessionId,
+    required String reason,
+    String? documentUrl,
+  }) async {
+    final response = await dio.post(
+      v1('/leave_requests'),
+      data: {
+        'session_id': sessionId,
+        'reason': reason,
+        if (documentUrl != null && documentUrl.isNotEmpty) 'document_url': documentUrl,
+      },
+    );
+    return response.data;
+  }
 }
