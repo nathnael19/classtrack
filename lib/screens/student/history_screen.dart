@@ -6,6 +6,7 @@ import 'components/history_session_item.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../logic/cubits/attendance/attendance_cubit.dart';
+import 'request_leave_screen.dart';
 
 class AttendanceHistoryScreen extends StatefulWidget {
   const AttendanceHistoryScreen({super.key});
@@ -202,6 +203,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
                                   status: status,
                                   icon: Icons.class_outlined,
                                   statusColor: statusColor,
+                                  onTap: () => _showSessionOptions(context, record),
                                 );
                               }).toList(),
                             ),
@@ -216,6 +218,71 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showSessionOptions(BuildContext context, Map<String, dynamic> record) {
+    final theme = Theme.of(context);
+    final isAbsent = record['status']?.toString().toUpperCase() == 'ABSENT';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              record['course_name'] ?? 'Class Session',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
+              title: const Text('Request Leave'),
+              subtitle: Text(isAbsent ? 'Explain your absence for this session' : 'Submit a leave request'),
+              onTap: () {
+                Navigator.pop(ctx);
+                
+                // Construct session-like object for RequestLeaveScreen
+                final session = {
+                  'id': record['session_id'],
+                  'course_name': record['course_name'],
+                  'section': record['section'],
+                  'room': record['room'], // History records might not have room info directly, but we can pass what we have
+                };
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RequestLeaveScreen(session: session),
+                  ),
+                ).then((result) {
+                  if (result == true && context.mounted) {
+                    context.read<AttendanceCubit>().refresh();
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
