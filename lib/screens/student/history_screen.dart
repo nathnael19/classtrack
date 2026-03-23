@@ -253,33 +253,46 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
-              title: const Text('Request Leave'),
-              subtitle: Text(isAbsent ? 'Explain your absence for this session' : 'Submit a leave request'),
-              onTap: () {
-                Navigator.pop(ctx);
-                
-                // Construct session-like object for RequestLeaveScreen
-                final session = {
-                  'id': record['session_id'],
-                  'course_name': record['course_name'],
-                  'section': record['section'],
-                  'room': record['room'], // History records might not have room info directly, but we can pass what we have
-                };
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RequestLeaveScreen(session: session),
+            if (isAbsent)
+              ListTile(
+                leading: const Icon(Icons.edit_calendar_rounded, color: ClassTrackTheme.primaryBlue),
+                title: const Text('Request Leave'),
+                subtitle: const Text('Explain your absence for this session'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  
+                  // Construct session-like object for RequestLeaveScreen
+                  final session = {
+                    'id': record['session_id'],
+                    'course_name': record['course_name'],
+                    'section': record['section'],
+                    'room': record['room'],
+                  };
+  
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RequestLeaveScreen(session: session),
+                    ),
+                  ).then((result) {
+                    if (result == true && context.mounted) {
+                      context.read<AttendanceCubit>().refresh();
+                    }
+                  });
+                },
+              ),
+            if (!isAbsent)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  'Leave requests are only available for absent sessions.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.hintColor,
+                    fontStyle: FontStyle.italic,
                   ),
-                ).then((result) {
-                  if (result == true && context.mounted) {
-                    context.read<AttendanceCubit>().refresh();
-                  }
-                });
-              },
-            ),
+                ),
+              ),
           ],
         ),
       ),
