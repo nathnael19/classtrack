@@ -15,6 +15,7 @@ import 'qr_scanner_screen.dart';
 import 'schedule_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
+import 'request_leave_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -83,7 +84,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) => QRScannerScreen(
-                          sessionId: state.activeSessions.isNotEmpty ? state.activeSessions[0]['id'] : null,
+                          sessionId: state.activeSessions.isNotEmpty
+                              ? state.activeSessions[0]['id']
+                              : null,
                         ),
                       ),
                     );
@@ -181,7 +184,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               icon,
               color: isSelected
                   ? ClassTrackTheme.primaryBlue
-                  : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                  : (isDark
+                        ? const Color(0xFF64748B)
+                        : const Color(0xFF94A3B8)),
               size: 26,
             ),
             const SizedBox(height: 5),
@@ -192,7 +197,9 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
                 color: isSelected
                     ? ClassTrackTheme.primaryBlue
-                    : (isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8)),
+                    : (isDark
+                          ? const Color(0xFF64748B)
+                          : const Color(0xFF94A3B8)),
               ),
             ),
           ],
@@ -200,6 +207,63 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       ),
     );
   }
+}
+
+void _showSessionOptions(BuildContext context, Map<String, dynamic> session) {
+  final theme = Theme.of(context);
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) => Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: theme.dividerColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            session['topic'] ?? session['course_name'] ?? 'Class Session',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ListTile(
+            leading: const Icon(
+              Icons.edit_calendar_rounded,
+              color: ClassTrackTheme.primaryBlue,
+            ),
+            title: const Text('Request Leave'),
+            subtitle: const Text('Submit a leave request for this session'),
+            onTap: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RequestLeaveScreen(session: session),
+                ),
+              ).then((result) {
+                if (result == true && context.mounted) {
+                  context.read<AttendanceCubit>().refresh();
+                }
+              });
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _DashboardHome extends StatelessWidget {
@@ -255,7 +319,8 @@ class _DashboardHome extends StatelessWidget {
             AttendanceStatusCard(
               percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
               status: attendanceSummary?['status'] ?? 'Calculating...',
-              message: attendanceSummary?['message'] ?? 'Fetching your records...',
+              message:
+                  attendanceSummary?['message'] ?? 'Fetching your records...',
             ),
             const SizedBox(height: 32),
             if (isLoading)
@@ -277,7 +342,7 @@ class _DashboardHome extends StatelessWidget {
             const SizedBox(height: 40),
             _buildUpcomingClassesHeader(theme, isDark),
             const SizedBox(height: 16),
-            _buildClassList(theme, isDark),
+            _buildClassList(context, theme, isDark),
             const SizedBox(height: 100),
           ],
         ),
@@ -301,12 +366,16 @@ class _DashboardHome extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
+                color: (isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 Icons.event_busy_rounded,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
                 size: 24,
               ),
             ),
@@ -316,7 +385,9 @@ class _DashboardHome extends StatelessWidget {
                 'No active classes right now.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ),
@@ -336,7 +407,9 @@ class _DashboardHome extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => QRScannerScreen(
-                sessionId: activeSessions.isNotEmpty ? activeSessions[0]['id'] : null,
+                sessionId: activeSessions.isNotEmpty
+                    ? activeSessions[0]['id']
+                    : null,
               ),
             ),
           );
@@ -395,7 +468,7 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildClassList(ThemeData theme, bool isDark) {
+  Widget _buildClassList(BuildContext context, ThemeData theme, bool isDark) {
     if (upcomingSessions.isEmpty) {
       return Center(
         child: Padding(
@@ -405,13 +478,17 @@ class _DashboardHome extends StatelessWidget {
               Icon(
                 Icons.calendar_today_rounded,
                 size: 48,
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
               const SizedBox(height: 16),
               Text(
                 'No upcoming sessions scheduled.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -426,14 +503,19 @@ class _DashboardHome extends StatelessWidget {
         final startTime = DateTime.parse(session['start_time']).toLocal();
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
-          child: UpcomingClassCard(
-            icon: Icons.school_rounded,
-            iconColor: ClassTrackTheme.primaryBlue,
-            iconBg: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-            title: session['topic'] ?? 'Class Session',
-            section: session['section'],
-            time: DateFormat('h:mm a').format(startTime),
-            location: session['room'] ?? 'N/A',
+          child: InkWell(
+            onTap: () => _showSessionOptions(context, session),
+            borderRadius: BorderRadius.circular(16),
+            child: UpcomingClassCard(
+              icon: Icons.school_rounded,
+              iconColor: ClassTrackTheme.primaryBlue,
+              iconBg: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+              title:
+                  session['topic'] ?? session['course_name'] ?? 'Class Session',
+              section: session['section'],
+              time: DateFormat('h:mm a').format(startTime),
+              location: session['room'] ?? 'N/A',
+            ),
           ),
         );
       }).toList(),
