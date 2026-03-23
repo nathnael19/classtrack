@@ -5,6 +5,7 @@ import '../../logic/api_service.dart';
 import 'request_leave_screen.dart';
 import '../../logic/cubits/attendance/attendance_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../utils/time_utils.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -365,7 +366,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           title: session['course_name'] != null 
               ? '${session['course_name']}: ${session['topic']}' 
               : session['topic'] ?? 'Untitled Session',
-          time: '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)}',
+          time: '${DateFormat('hh:mm a').format(startTime)} - ${DateFormat('hh:mm a').format(endTime)} (${formatEthiopianTimeFromDateTime(startTime)} - ${formatEthiopianTimeFromDateTime(endTime)})',
           location: session['room'] != null ? 
               (session['section'] != null ? '${session['room']} (Sec: ${session['section']})' : session['room']) 
               : 'N/A',
@@ -470,7 +471,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 60,
+            width: 80,
             child: Column(
               children: [
                 Text(
