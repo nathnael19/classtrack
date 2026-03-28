@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -5,7 +7,6 @@ import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/screens/student/settings_screen.dart';
 import 'package:classtrack/screens/student/edit_profile_screen.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -50,13 +51,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() => _isLoading = true);
         final api = ApiService();
         final response = await api.uploadProfilePicture(File(image.path));
-        
-        setState(() {
-          _userData = response;
-          _isLoading = false;
-        });
-        
         if (mounted) {
+          setState(() {
+            _userData = response;
+            _isLoading = false;
+          });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile picture updated successfully')),
           );
@@ -64,9 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     } catch (e) {
       if (!currentContext.mounted) return;
-      ScaffoldMessenger.of(
-        currentContext,
-      ).showSnackBar(const SnackBar(content: Text('Failed to pick image')));
+      ScaffoldMessenger.of(currentContext).showSnackBar(
+        const SnackBar(content: Text('Failed to pick image')),
+      );
     }
   }
 
@@ -76,24 +75,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
-          child: Column(
-            children: [
-              _buildAppBar(context, theme, isDark),
-              const SizedBox(height: 40),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildProfileHeader(theme, isDark),
-              const SizedBox(height: 40),
-              _buildSettingsSection(context, theme, isDark),
-              const SizedBox(height: 32),
-              _buildLogoutButton(context, theme, isDark),
-              const SizedBox(height: 40),
-            ],
+      body: Stack(
+        children: [
+          // Background Glow
+          if (isDark)
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF6366F1).withOpacity(0.05),
+                ),
+              ),
+            ),
+          
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              child: Column(
+                children: [
+                  _SlideFadeIn(
+                    delay: 0,
+                    child: _buildAppBar(context, theme, isDark),
+                  ),
+                  const SizedBox(height: 32),
+                  _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _buildProfileContent(theme, isDark),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -107,31 +125,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: theme.textTheme.headlineSmall?.copyWith(
             fontSize: 22,
             fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
           ),
         ),
-        Container(
+        _buildGlassActionButton(
+          icon: Icons.edit_rounded,
+          onPressed: () async {
+            if (_userData != null) {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EditProfileScreen(userData: _userData!),
+                ),
+              );
+              if (result == true) _fetchProfile();
+            }
+          },
+          isDark: isDark,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassActionButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    required bool isDark,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(12),
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+            ),
           ),
           child: IconButton(
-            onPressed: () async {
-              if (_userData != null) {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        EditProfileScreen(userData: _userData!),
-                  ),
-                );
-                if (result == true) {
-                  _fetchProfile();
-                }
-              }
-            },
-            icon: const Icon(Icons.edit_rounded, size: 20),
-            color: ClassTrackTheme.primaryBlue,
+            onPressed: onPressed,
+            icon: Icon(icon, size: 20),
+            color: isDark ? Colors.white : ClassTrackTheme.primaryBlue,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileContent(ThemeData theme, bool isDark) {
+    return Column(
+      children: [
+        _SlideFadeIn(
+          delay: 100,
+          child: _buildProfileHeader(theme, isDark),
+        ),
+        const SizedBox(height: 32),
+        _SlideFadeIn(
+          delay: 200,
+          child: _buildBentoStats(theme, isDark),
+        ),
+        const SizedBox(height: 32),
+        _SlideFadeIn(
+          delay: 300,
+          child: _buildSettingsSection(context, theme, isDark),
+        ),
+        const SizedBox(height: 32),
+        _SlideFadeIn(
+          delay: 400,
+          child: _buildLogoutButton(context, theme, isDark),
         ),
       ],
     );
@@ -141,18 +204,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Column(
       children: [
         Stack(
+          alignment: Alignment.center,
           children: [
+            // Circular Glow
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.2),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+            ),
+            
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
+                  color: isDark ? Colors.white.withOpacity(0.1) : const Color(0xFF6366F1).withOpacity(0.2),
                   width: 3,
                 ),
               ),
               child: CircleAvatar(
-                radius: 65,
+                radius: 64,
                 backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0),
                 backgroundImage: _userData?['profile_picture_url'] != null
                     ? NetworkImage(
@@ -163,30 +243,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
               ),
             ),
+            
             Positioned(
-              right: 2,
-              bottom: 2,
+              right: 0,
+              bottom: 0,
               child: GestureDetector(
                 onTap: _pickImage,
                 child: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: ClassTrackTheme.primaryBlue,
+                    color: const Color(0xFF6366F1),
                     shape: BoxShape.circle,
                     border: Border.all(color: theme.scaffoldBackgroundColor, width: 3),
                     boxShadow: [
                       BoxShadow(
-                        color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.3),
+                        color: const Color(0xFF6366F1).withOpacity(0.3),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.camera_alt_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 18),
                 ),
               ),
             ),
@@ -197,61 +274,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _userData?['name'] ?? 'Student',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w900,
+            fontSize: 26,
+            letterSpacing: -1,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
-          'ID: ${_userData?['student_id'] ?? 'N/A'}',
+          _userData?['email'] ?? '',
           style: theme.textTheme.bodyMedium?.copyWith(
+            color: isDark ? Colors.white38 : Colors.black38,
             fontWeight: FontWeight.w600,
-            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
           ),
         ),
-        const SizedBox(height: 20),
-        if (_userData?['program'] != null && _userData!['program'].toString().isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _userData!['program'],
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+      ],
+    );
+  }
+
+  Widget _buildBentoStats(ThemeData theme, bool isDark) {
+    return Column(
+      children: [
+        _buildGlassTile(
+          icon: Icons.fingerprint_rounded,
+          label: 'STUDENT ID',
+          value: _userData?['student_id'] ?? 'N/A',
+          color: const Color(0xFF6366F1),
+          isDark: isDark,
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildGlassTile(
+                icon: Icons.school_rounded,
+                label: 'PROGRAM',
+                value: _userData?['program'] ?? 'N/A',
+                color: const Color(0xFF10B981),
+                isDark: isDark,
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-        ],
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildGlassTile(
+                icon: Icons.account_balance_rounded,
+                label: 'DEPT',
+                value: _userData?['department_short_name'] ?? _userData?['department_name'] ?? 'N/A',
+                color: const Color(0xFFF59E0B),
+                isDark: isDark,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassTile({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isDark,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1)),
+            color: isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.7),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
+            ),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.school_rounded,
-                size: 18,
-                color: ClassTrackTheme.primaryBlue,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(width: 10),
-              Text(
-                _userData?['department_name'] ?? 'Not Assigned',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: ClassTrackTheme.primaryBlue,
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -266,107 +404,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: theme.textTheme.labelLarge?.copyWith(
               fontSize: 12,
               fontWeight: FontWeight.w900,
-              color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+              color: isDark ? Colors.white38 : Colors.black38,
               letterSpacing: 2,
             ),
           ),
         ),
         _buildSettingsItem(
-          theme: theme,
-          isDark: isDark,
           icon: Icons.settings_rounded,
           iconColor: const Color(0xFF64748B),
           title: 'App Settings',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            );
-          },
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          isDark: isDark,
         ),
         _buildSettingsItem(
-          theme: theme,
-          isDark: isDark,
           icon: Icons.lock_person_rounded,
           iconColor: const Color(0xFF6366F1),
           title: 'Security & Password',
-          onTap: () {
-             // Handle security navigation
-          },
+          onTap: () {},
+          isDark: isDark,
         ),
         _buildSettingsItem(
-          theme: theme,
-          isDark: isDark,
           icon: Icons.help_outline_rounded,
           iconColor: const Color(0xFF10B981),
           title: 'Help & Support',
           onTap: () {},
+          isDark: isDark,
         ),
       ],
     );
   }
 
   Widget _buildSettingsItem({
-    required ThemeData theme,
-    required bool isDark,
     required IconData icon,
     required Color iconColor,
     required String title,
-    String? trailingText,
+    required bool isDark,
     VoidCallback? onTap,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
-        ),
-        boxShadow: isDark ? [] : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: iconColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor, size: 22),
-        ),
-        title: Text(
-          title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (trailingText != null)
-              Text(
-                trailingText,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF94A3B8),
-                ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.04) : Colors.white.withOpacity(0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
               ),
-            const SizedBox(width: 8),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: Color(0xFFCBD5E1),
             ),
-          ],
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 20),
+              ),
+              title: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
+              trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black12),
+              onTap: onTap,
+            ),
+          ),
         ),
-        onTap: onTap ?? () {},
       ),
     );
   }
@@ -374,38 +481,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLogoutButton(BuildContext context, ThemeData theme, bool isDark) {
     return SizedBox(
       width: double.infinity,
-      height: 60,
-      child: OutlinedButton(
+      height: 64,
+      child: ElevatedButton(
         onPressed: () => context.read<AuthCubit>().logout(),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            color: const Color(0xFFEF4444).withValues(alpha: 0.2), 
-            width: 1.5,
-          ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFEF4444).withOpacity(0.1),
+          foregroundColor: const Color(0xFFEF4444),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: const Color(0xFFEF4444).withOpacity(0.2)),
           ),
-          backgroundColor: isDark ? const Color(0xFFEF4444).withValues(alpha: 0.05) : Colors.white,
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.logout_rounded,
-              color: Color(0xFFEF4444),
-              size: 22,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Logout Account',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w900,
-                color: const Color(0xFFEF4444),
-              ),
-            ),
+            Icon(Icons.logout_rounded, size: 22),
+            SizedBox(width: 12),
+            Text('Logout Account', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SlideFadeIn extends StatelessWidget {
+  final Widget child;
+  final int delay;
+
+  const _SlideFadeIn({required this.child, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
