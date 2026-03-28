@@ -17,6 +17,7 @@ import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'request_leave_screen.dart';
 import 'course_materials_screen.dart';
+import 'my_courses_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -471,25 +472,57 @@ class _DashboardHome extends StatelessWidget {
   }
 
   Widget _buildMyCoursesSection(BuildContext context, ThemeData theme, bool isDark) {
+    final displayCourses = enrolledCourses.take(4).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'My Courses',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'My Courses',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            if (enrolledCourses.length > 4)
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MyCoursesScreen()),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: ClassTrackTheme.primaryBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                child: const Text('See All'),
+              )
+            else if (enrolledCourses.isNotEmpty)
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MyCoursesScreen()),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: ClassTrackTheme.primaryBlue.withOpacity(0.7),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+                child: const Icon(Icons.arrow_forward_ios, size: 14),
+              ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         SizedBox(
           height: 110,
           child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             scrollDirection: Axis.horizontal,
-            itemCount: enrolledCourses.length,
+            itemCount: displayCourses.length,
             separatorBuilder: (_, __) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              final course = enrolledCourses[index];
+              final course = displayCourses[index];
               final courseId = course['id'] as int;
               final courseName = course['name'] ?? course['course_name'] ?? 'Course';
               final courseCode = course['code'] ?? course['course_code'] ?? '';
