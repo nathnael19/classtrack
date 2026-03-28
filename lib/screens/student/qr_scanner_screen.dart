@@ -6,6 +6,7 @@ import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/logic/device_helper.dart';
 import 'package:dio/dio.dart';
+import 'package:local_auth/local_auth.dart';
 
 class QRScannerScreen extends StatefulWidget {
   final int? sessionId;
@@ -248,7 +249,9 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF10B981,
+                            ).withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -263,7 +266,10 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _sessionData?['room'] ?? (_isLoading ? 'Locating...' : 'Unspecified Venue'),
+                                _sessionData?['room'] ??
+                                    (_isLoading
+                                        ? 'Locating...'
+                                        : 'Unspecified Venue'),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
@@ -274,33 +280,50 @@ class _QRScannerScreenState extends State<QRScannerScreen>
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      _sessionData != null 
-                                        ? (_sessionData?['course_name'] ?? _sessionData?['topic'] ?? 'ONGOING SESSION')
-                                        : (_isLoading ? 'SYNCHRONIZING...' : 'NO ACTIVE SESSION'),
-                                      style: theme.textTheme.labelLarge?.copyWith(
-                                        fontWeight: FontWeight.w900,
-                                        color: _sessionData != null ? const Color(0xFF10B981) : Colors.amberAccent,
-                                        letterSpacing: 1.2,
-                                      ),
+                                      _sessionData != null
+                                          ? (_sessionData?['course_name'] ??
+                                                _sessionData?['topic'] ??
+                                                'ONGOING SESSION')
+                                          : (_isLoading
+                                                ? 'SYNCHRONIZING...'
+                                                : 'NO ACTIVE SESSION'),
+                                      style: theme.textTheme.labelLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            color: _sessionData != null
+                                                ? const Color(0xFF10B981)
+                                                : Colors.amberAccent,
+                                            letterSpacing: 1.2,
+                                          ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   if (_sessionData?['section'] != null) ...[
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                                        color: const Color(
+                                          0xFF10B981,
+                                        ).withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(4),
-                                        border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                                        border: Border.all(
+                                          color: const Color(
+                                            0xFF10B981,
+                                          ).withValues(alpha: 0.2),
+                                        ),
                                       ),
                                       child: Text(
                                         'SEC ${_sessionData?['section']}',
-                                        style: theme.textTheme.labelSmall?.copyWith(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w900,
-                                          color: const Color(0xFF10B981),
-                                        ),
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.w900,
+                                              color: const Color(0xFF10B981),
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -333,7 +356,10 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.6),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1), width: 1),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
         ),
         child: Icon(icon, color: Colors.white, size: 24),
       ),
@@ -375,6 +401,24 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         throw Exception('No active session identified.');
       }
 
+      // 0. Biometric Vault (Identity Verification)
+      final LocalAuthentication auth = LocalAuthentication();
+      final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
+      final bool canAuthenticate = canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+
+      if (canAuthenticate) {
+        final bool didAuthenticate = await auth.authenticate(
+          localizedReason: 'Verify identity to mark attendance',
+          options: const AuthenticationOptions(
+            stickyAuth: true,
+            biometricOnly: false, // Allow fallback to PIN/Passcode to prevent lockouts
+          ),
+        );
+        if (!didAuthenticate) {
+          throw Exception('Identity verification failed or was canceled.');
+        }
+      }
+
       // 1. Check Location Services & Permissions
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
@@ -388,9 +432,11 @@ class _QRScannerScreenState extends State<QRScannerScreen>
           throw Exception('Location permissions are denied');
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied, we cannot request permissions.');
+        throw Exception(
+          'Location permissions are permanently denied, we cannot request permissions.',
+        );
       }
 
       // 2. Fetch Real GPS Coordinates
@@ -401,6 +447,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
 
       final double currentLat = position.latitude;
       final double currentLng = position.longitude;
+      final double currentAccuracy = position.accuracy;
 
       final deviceInfo = await getDeviceInfo();
       final payload = {
@@ -408,6 +455,7 @@ class _QRScannerScreenState extends State<QRScannerScreen>
         'qr_code_content': token,
         'latitude': currentLat,
         'longitude': currentLng,
+        'accuracy': currentAccuracy,
         'device_fingerprint': deviceInfo['device_id'],
       };
 
@@ -430,16 +478,17 @@ class _QRScannerScreenState extends State<QRScannerScreen>
     } catch (e) {
       debugPrint('Attendance Marking Error: $e');
       String errorMsg = 'Failed to process attendance';
-      
+
       if (e is DioException) {
-        if (e.type == DioExceptionType.connectionTimeout || 
+        if (e.type == DioExceptionType.connectionTimeout ||
             e.type == DioExceptionType.receiveTimeout) {
           errorMsg = 'Server connection timed out. Please check your internet.';
         } else {
           errorMsg = e.response?.data['detail']?.toString() ?? errorMsg;
         }
       } else if (e.toString().contains('TimeoutException')) {
-        errorMsg = 'GPS signal too weak. Please try moving closer to a window or door.';
+        errorMsg =
+            'GPS signal too weak. Please try moving closer to a window or door.';
       } else if (e is Exception) {
         errorMsg = e.toString().replaceFirst('Exception: ', '');
       }
