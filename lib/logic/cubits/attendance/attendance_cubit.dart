@@ -12,6 +12,7 @@ class AttendanceState {
   final List<dynamic> activeSessions;
   final List<dynamic> upcomingSessions;
   final List<dynamic> history;
+  final List<dynamic> enrolledCourses;
   final Map<String, dynamic>? summary;
   final Map<String, dynamic>? userData;
   final String? error;
@@ -21,6 +22,7 @@ class AttendanceState {
     this.activeSessions = const [],
     this.upcomingSessions = const [],
     this.history = const [],
+    this.enrolledCourses = const [],
     this.summary,
     this.userData,
     this.error,
@@ -33,6 +35,7 @@ class AttendanceState {
     List<dynamic>? activeSessions,
     List<dynamic>? upcomingSessions,
     List<dynamic>? history,
+    List<dynamic>? enrolledCourses,
     Map<String, dynamic>? summary,
     Map<String, dynamic>? userData,
     String? error,
@@ -42,6 +45,7 @@ class AttendanceState {
       activeSessions: activeSessions ?? this.activeSessions,
       upcomingSessions: upcomingSessions ?? this.upcomingSessions,
       history: history ?? this.history,
+      enrolledCourses: enrolledCourses ?? this.enrolledCourses,
       summary: summary ?? this.summary,
       userData: userData ?? this.userData,
       error: error,
@@ -64,6 +68,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
         api.getAttendanceHistory(),
         api.getAttendanceSummary(),
         api.getCurrentUser(),
+        api.getEnrolledCourses(),
       ]);
 
       final activeSessions = (results[0] as Response).data as List<dynamic>;
@@ -75,6 +80,7 @@ class AttendanceCubit extends Cubit<AttendanceState> {
         history: results[2] as List<dynamic>,
         summary: results[3] as Map<String, dynamic>,
         userData: results[4] as Map<String, dynamic>,
+        enrolledCourses: results[5] as List<dynamic>,
       ));
 
       _subscribeToSessions(activeSessions);
