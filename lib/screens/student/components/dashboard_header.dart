@@ -18,95 +18,104 @@ class DashboardHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  date.toUpperCase(),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  greeting,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.8,
+                    color: isDark ? Colors.white : ClassTrackTheme.textDark,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Stack(
+            alignment: Alignment.center,
             children: [
-              Text(
-                date,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
-                  fontWeight: FontWeight.w600,
+              // Outer Glow
+              Container(
+                width: 62,
+                height: 62,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    colors: [
+                      ClassTrackTheme.primaryBlue.withValues(alpha: 0.0),
+                      ClassTrackTheme.primaryBlue.withValues(alpha: 0.5),
+                      ClassTrackTheme.accentEmerald.withValues(alpha: 0.5),
+                      ClassTrackTheme.primaryBlue.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                greeting,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
+              // Inner Border
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
                 ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+                child: ClipOval(
+                  child: Image.network(
+                    avatarUrl ?? 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 28),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 4,
+                bottom: 4,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: isDark ? const Color(0xFF0F172B) : Colors.white, width: 2),
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        const SizedBox(width: 16),
-        Stack(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-                border: Border.all(
-                  color: isDark ? const Color(0xFF334155) : Colors.white,
-                  width: 3,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  avatarUrl ??
-                      'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
-                      alignment: Alignment.center,
-                      child: const Icon(
-                        Icons.person,
-                        color: ClassTrackTheme.primaryBlue,
-                        size: 26,
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            Positioned(
-              right: 2,
-              bottom: 2,
-              child: Container(
-                width: 14,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF22C55E), // Online Green
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF0F172B) : Colors.white,
-                    width: 2.5,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
