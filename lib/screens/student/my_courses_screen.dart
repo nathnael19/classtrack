@@ -1,11 +1,26 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/attendance/attendance_cubit.dart';
 import 'package:classtrack/screens/student/course_materials_screen.dart';
 import 'package:classtrack/theme/design_theme.dart';
 
-class MyCoursesScreen extends StatelessWidget {
+class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
+
+  @override
+  State<MyCoursesScreen> createState() => _MyCoursesScreenState();
+}
+
+class _MyCoursesScreenState extends State<MyCoursesScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +29,7 @@ class MyCoursesScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        titleSpacing: 0,
         title: Text(
           'My Courses',
           style: theme.textTheme.titleLarge?.copyWith(
@@ -22,68 +38,140 @@ class MyCoursesScreen extends StatelessWidget {
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
-        centerTitle: false,
       ),
       body: BlocBuilder<AttendanceCubit, AttendanceState>(
         builder: (context, state) {
-          final courses = state.enrolledCourses;
+          final allCourses = state.enrolledCourses;
+          final courses = allCourses.where((c) {
+            final name = (c['name'] ?? c['course_name'] ?? '').toString().toLowerCase();
+            final code = (c['code'] ?? c['course_code'] ?? '').toString().toLowerCase();
+            return name.contains(_searchQuery.toLowerCase()) || 
+                   code.contains(_searchQuery.toLowerCase());
+          }).toList();
 
-          if (courses.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   Icon(
-                    Icons.school_outlined,
-                    size: 64,
-                    color: isDark ? Colors.white24 : Colors.black12,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No enrolled courses found',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ],
-              ),
-            );
+          if (allCourses.isEmpty) {
+            return _buildEmptyState(theme, isDark, 'No enrolled courses found');
           }
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(20),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.85,
-            ),
-            itemCount: courses.length,
-            itemBuilder: (context, index) {
-              final course = courses[index];
-              final courseId = course['id'] as int;
-              final courseName = course['name'] ?? course['course_name'] ?? 'Course';
-              final courseCode = course['code'] ?? course['course_code'] ?? '';
+          return Column(
+            children: [
+              _buildSearchBar(theme, isDark),
+              Expanded(
+                child: courses.isEmpty
+                    ? _buildEmptyState(theme, isDark, 'No courses match your search')
+                    : GridView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 1.15,
+                        ),
+                        itemCount: courses.length,
+                        itemBuilder: (context, index) {
+                          final course = courses[index];
+                          final courseId = course['id'] as int;
+                          final courseName = course['name'] ?? course['course_name'] ?? 'Course';
+                          final courseCode = course['code'] ?? course['course_code'] ?? '';
 
-              final colors = [
-                ClassTrackTheme.primaryBlue,
-                const Color(0xFF8B5CF6),
-                const Color(0xFF059669),
-                const Color(0xFFD97706),
-                const Color(0xFFDC2626),
-              ];
-              final color = colors[index % colors.length];
+                          final colors = [
+                            ClassTrackTheme.primaryBlue,
+                            const Color(0xFF8B5CF6),
+                            const Color(0xFF0D9488),
+                            const Color(0xFFD97706),
+                            const Color(0xFFE11D48),
+                          ];
+                          final color = colors[index % colors.length];
 
-              return _buildCourseCard(
-                context,
-                theme,
-                isDark,
-                courseId,
-                courseName,
-                courseCode,
-                color,
-              );
-            },
+                          return _buildCourseCard(
+                            context,
+                            theme,
+                            isDark,
+                            courseId,
+                            courseName,
+                            courseCode,
+                            color,
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(ThemeData theme, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+          ),
+          boxShadow: [
+            if (!isDark)
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) => setState(() => _searchQuery = value),
+          decoration: InputDecoration(
+            hintText: 'Search your courses...',
+            hintStyle: TextStyle(color: isDark ? Colors.white38 : Colors.black38),
+            prefixIcon: Icon(Icons.search, color: isDark ? Colors.white38 : Colors.black38),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 18),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme, bool isDark, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.02),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _searchQuery.isEmpty ? Icons.school_outlined : Icons.search_off_rounded,
+              size: 48,
+              color: isDark ? Colors.white24 : Colors.black12,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: isDark ? Colors.white60 : Colors.black54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -107,65 +195,82 @@ class MyCoursesScreen extends StatelessWidget {
           ),
         ),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color,
-              color.withOpacity(0.8),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
           children: [
+            // Background Liquid Effect
             Container(
-              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.book_rounded,
-                color: Colors.white,
-                size: 20,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color,
+                    color.withOpacity(0.7),
+                  ],
+                ),
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  code,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+            
+            // Subtle Pattern Overlay
+            Positioned(
+              right: -10,
+              top: -10,
+              child: Icon(
+                Icons.book_rounded,
+                size: 80,
+                color: Colors.white.withOpacity(0.1),
+              ),
+            ),
+
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.folder_shared_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    height: 1.2,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        code,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white.withOpacity(0.8),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
