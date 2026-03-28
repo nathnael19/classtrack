@@ -334,45 +334,75 @@ class _DashboardHome extends StatelessWidget {
       onRefresh: onRefresh,
       color: ClassTrackTheme.primaryBlue,
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            DashboardHeader(date: dateStr, greeting: '$greeting, $userName'),
-            const SizedBox(height: 32),
-            AttendanceStatusCard(
-              percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
-              status: attendanceSummary?['status'] ?? 'Calculating...',
-              message:
-                  attendanceSummary?['message'] ?? 'Fetching your records...',
+            _SlideFadeIn(
+              delay: 0,
+              child: DashboardHeader(
+                date: dateStr, 
+                greeting: '$greeting, $userName',
+              ),
             ),
-            const SizedBox(height: 32),
-            if (isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (activeSessions.isNotEmpty)
-              NextClassHeroCard(
-                title: activeSessions[0]['course_name'] ?? 'Active Session',
-                section: activeSessions[0]['section'],
-                time: 'NOW',
-                location: activeSessions[0]['room'] ?? 'N/A',
-                geofenceStatus: 'Ongoing Session',
-                isPresent: activeSessions[0]['is_present'] ?? false,
-                onViewMap: () {},
+            const SizedBox(height: 28),
+            
+            // Bento Grid Section (Attendance + Next Class)
+            _SlideFadeIn(
+              delay: 100,
+              child: AttendanceStatusCard(
+                percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
+                status: attendanceSummary?['status'] ?? 'Calculating...',
+                message: attendanceSummary?['message'] ?? 'Fetching your records...',
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            if (activeSessions.isNotEmpty)
+              _SlideFadeIn(
+                delay: 200,
+                child: NextClassHeroCard(
+                  title: activeSessions[0]['course_name'] ?? 'Active Session',
+                  section: activeSessions[0]['section'],
+                  time: 'NOW',
+                  location: activeSessions[0]['room'] ?? 'N/A',
+                  geofenceStatus: 'Ongoing Session',
+                  isPresent: activeSessions[0]['is_present'] ?? false,
+                  onViewMap: () {},
+                ),
               )
-            else
-              _buildNoActiveClassCard(theme, isDark),
-            if (enrolledCourses.isNotEmpty) ...[
-              const SizedBox(height: 32),
-              _buildMyCoursesSection(context, theme, isDark),
-            ],
+            else if (!isLoading)
+              _SlideFadeIn(
+                delay: 200,
+                child: _buildNoActiveClassCard(theme, isDark),
+              ),
+              
             const SizedBox(height: 32),
-            _buildScanButton(context),
-            const SizedBox(height: 40),
-            _buildUpcomingClassesHeader(theme, isDark),
-            const SizedBox(height: 16),
-            _buildClassList(context, theme, isDark),
-            const SizedBox(height: 100),
+            
+            if (enrolledCourses.isNotEmpty)
+              _SlideFadeIn(
+                delay: 300,
+                child: _buildMyCoursesSection(context, theme, isDark),
+              ),
+              
+            const SizedBox(height: 24),
+            _SlideFadeIn(
+              delay: 400,
+              child: _buildScanButton(context),
+            ),
+            
+            const SizedBox(height: 48),
+            _SlideFadeIn(
+              delay: 500,
+              child: _buildUpcomingClassesHeader(theme, isDark),
+            ),
+            const SizedBox(height: 12),
+            _SlideFadeIn(
+              delay: 600,
+              child: _buildClassList(context, theme, isDark),
+            ),
+            const SizedBox(height: 120),
           ],
         ),
       ),
@@ -395,16 +425,12 @@ class _DashboardHome extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isDark
-                    ? const Color(0xFF1E293B)
-                    : const Color(0xFFF8FAFC)),
+                color: (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 Icons.event_busy_rounded,
-                color: isDark
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF94A3B8),
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                 size: 24,
               ),
             ),
@@ -414,9 +440,7 @@ class _DashboardHome extends StatelessWidget {
                 'No active classes right now.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF64748B),
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                 ),
               ),
             ),
@@ -436,9 +460,7 @@ class _DashboardHome extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => QRScannerScreen(
-                sessionId: activeSessions.isNotEmpty
-                    ? activeSessions[0]['id']
-                    : null,
+                sessionId: activeSessions.isNotEmpty ? activeSessions[0]['id'] : null,
               ),
             ),
           );
@@ -450,7 +472,7 @@ class _DashboardHome extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           elevation: 8,
-          shadowColor: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
+          shadowColor: ClassTrackTheme.primaryBlue.withOpacity(0.4),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -515,7 +537,7 @@ class _DashboardHome extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 120, // Slightly taller for padding
+          height: 120,
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 4),
             scrollDirection: Axis.horizontal,
@@ -660,17 +682,13 @@ class _DashboardHome extends StatelessWidget {
               Icon(
                 Icons.calendar_today_rounded,
                 size: 48,
-                color: isDark
-                    ? const Color(0xFF334155)
-                    : const Color(0xFFE2E8F0),
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
               ),
               const SizedBox(height: 16),
               Text(
                 'No upcoming sessions scheduled.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFF94A3B8),
+                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -684,23 +702,49 @@ class _DashboardHome extends StatelessWidget {
       children: upcomingSessions.map((session) {
         final startTime = DateTime.parse(session['start_time']).toLocal();
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16.0),
+          padding: const EdgeInsets.only(bottom: 12.0),
           child: InkWell(
             onTap: () => _showSessionOptions(context, session),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: UpcomingClassCard(
               icon: Icons.school_rounded,
               iconColor: ClassTrackTheme.primaryBlue,
-              iconBg: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-              title:
-                  session['topic'] ?? session['course_name'] ?? 'Class Session',
+              iconBg: ClassTrackTheme.primaryBlue.withOpacity(0.1),
+              title: session['topic'] ?? session['course_name'] ?? 'Class Session',
               section: session['section'],
               time: DateFormat('h:mm a').format(startTime),
               location: session['room'] ?? 'N/A',
+              isOnline: session['type'] == 'online',
             ),
           ),
         );
       }).toList(),
+    );
+  }
+}
+
+class _SlideFadeIn extends StatelessWidget {
+  final Widget child;
+  final int delay;
+
+  const _SlideFadeIn({required this.child, required this.delay});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
