@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 class ClassTrackTheme {
   // Brand Colors (Aligned with Web HSL 239 84% 67%)
-  static const Color primaryBlue = Color(0xFF6366F1); 
+  static const Color primaryBlue = Color(0xFF6366F1);
   static const Color accentEmerald = Color(0xFF10B981);
   static const Color backgroundWhite = Color(0xFFFFFFFF);
   static const Color textDark = Color(0xFF0F172A);
