@@ -16,6 +16,7 @@ import 'schedule_screen.dart';
 import 'history_screen.dart';
 import 'profile_screen.dart';
 import 'request_leave_screen.dart';
+import 'course_materials_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -33,6 +34,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         return _DashboardHome(
           activeSessions: state.activeSessions,
           upcomingSessions: state.upcomingSessions,
+          enrolledCourses: state.enrolledCourses,
           userData: state.userData,
           attendanceSummary: state.summary,
           isLoading: state.status == AttendanceStatus.loading,
@@ -241,6 +243,26 @@ void _showSessionOptions(BuildContext context, Map<String, dynamic> session) {
           const SizedBox(height: 24),
           ListTile(
             leading: const Icon(
+              Icons.menu_book_rounded,
+              color: ClassTrackTheme.primaryBlue,
+            ),
+            title: const Text('View Materials'),
+            subtitle: const Text('Access lecture notes and resources'),
+            onTap: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseMaterialsScreen(
+                    courseId: session['course_id'],
+                    courseName: session['course_name'] ?? 'Course Materials',
+                  ),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(
               Icons.edit_calendar_rounded,
               color: ClassTrackTheme.primaryBlue,
             ),
@@ -269,6 +291,7 @@ void _showSessionOptions(BuildContext context, Map<String, dynamic> session) {
 class _DashboardHome extends StatelessWidget {
   final List<dynamic> activeSessions;
   final List<dynamic> upcomingSessions;
+  final List<dynamic> enrolledCourses;
   final Map<String, dynamic>? userData;
   final Map<String, dynamic>? attendanceSummary;
   final bool isLoading;
@@ -277,6 +300,7 @@ class _DashboardHome extends StatelessWidget {
   const _DashboardHome({
     required this.activeSessions,
     required this.upcomingSessions,
+    required this.enrolledCourses,
     this.userData,
     this.attendanceSummary,
     required this.isLoading,
@@ -337,6 +361,10 @@ class _DashboardHome extends StatelessWidget {
               )
             else
               _buildNoActiveClassCard(theme, isDark),
+            if (enrolledCourses.isNotEmpty) ...[
+              const SizedBox(height: 32),
+              _buildMyCoursesSection(context, theme, isDark),
+            ],
             const SizedBox(height: 32),
             _buildScanButton(context),
             const SizedBox(height: 40),
@@ -439,6 +467,116 @@ class _DashboardHome extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildMyCoursesSection(BuildContext context, ThemeData theme, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'My Courses',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 110,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: enrolledCourses.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final course = enrolledCourses[index];
+              final courseId = course['id'] as int;
+              final courseName = course['name'] ?? course['course_name'] ?? 'Course';
+              final courseCode = course['code'] ?? course['course_code'] ?? '';
+
+              final colors = [
+                ClassTrackTheme.primaryBlue,
+                const Color(0xFF8B5CF6),
+                const Color(0xFF059669),
+                const Color(0xFFD97706),
+                const Color(0xFFDC2626),
+              ];
+              final color = colors[index % colors.length];
+
+              return GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CourseMaterialsScreen(
+                      courseId: courseId,
+                      courseName: courseName,
+                    ),
+                  ),
+                ),
+                child: Container(
+                  width: 160,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [color, color.withOpacity(0.75)],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.25),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Icon(Icons.menu_book_rounded, color: Colors.white70, size: 20),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
+                        ],
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (courseCode.isNotEmpty)
+                            Text(
+                              courseCode,
+                              style: const TextStyle(
+                                color: Colors.white60,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          const SizedBox(height: 2),
+                          Text(
+                            courseName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
