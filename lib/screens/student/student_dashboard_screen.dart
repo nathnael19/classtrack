@@ -515,7 +515,7 @@ class _DashboardHome extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         SizedBox(
-          height: 110,
+          height: 120, // Slightly taller for padding
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 4),
             scrollDirection: Axis.horizontal,
@@ -546,61 +546,72 @@ class _DashboardHome extends StatelessWidget {
                     ),
                   ),
                 ),
-                child: Container(
-                  width: 160,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [color, color.withOpacity(0.75)],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withOpacity(0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Icon(Icons.menu_book_rounded, color: Colors.white70, size: 20),
-                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white38, size: 14),
-                        ],
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (courseCode.isNotEmpty)
-                            Text(
-                              courseCode,
-                              style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                          const SizedBox(height: 2),
-                          Text(
-                            courseName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                      Container(
+                        width: 145,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [color, color.withOpacity(0.7)],
                           ),
-                        ],
+                        ),
+                      ),
+                      Positioned(
+                        right: -10,
+                        top: -10,
+                        child: Icon(
+                          Icons.menu_book_rounded,
+                          size: 60,
+                          color: Colors.white.withOpacity(0.08),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.folder_shared_rounded, color: Colors.white, size: 14),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (courseCode.isNotEmpty)
+                                  Text(
+                                    courseCode,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  courseName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    height: 1.1,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
