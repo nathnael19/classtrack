@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:classtrack/theme/design_theme.dart';
+import 'package:classtrack/widgets/glass_widgets.dart';
+import 'package:classtrack/utils/form_validators.dart';
 import '../../logic/api_service.dart';
 
 class RequestLeaveScreen extends StatefulWidget {
@@ -11,23 +14,58 @@ class RequestLeaveScreen extends StatefulWidget {
   State<RequestLeaveScreen> createState() => _RequestLeaveScreenState();
 }
 
-class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
+class _RequestLeaveScreenState extends State<RequestLeaveScreen> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
   final _documentController = TextEditingController();
   final ApiService _api = ApiService();
   bool _isSubmitting = false;
 
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
+    _animationController.forward();
+  }
+
   @override
   void dispose() {
     _reasonController.dispose();
     _documentController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      HapticFeedback.heavyImpact();
+      return;
+    }
+    
     setState(() => _isSubmitting = true);
+    HapticFeedback.mediumImpact();
 
     try {
       await _api.createLeaveRequest(
@@ -70,179 +108,181 @@ class _RequestLeaveScreenState extends State<RequestLeaveScreen> {
     final section = session['section'];
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Request Leave',
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                  ),
-                ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Stack(
+        children: [
+          const DynamicBackground(),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+              final dynamicScale = (h / 844.0).clamp(0.85, 1.1);
+
+              return SafeArea(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      courseName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
+                    // Custom App Bar
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                            color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Request Leave',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                            ),
+                          ),
+                          const Spacer(),
+                          const SizedBox(width: 48),
+                        ],
                       ),
                     ),
-                    if (section != null && section.toString().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Section $section • $room',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
+
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 16 * dynamicScale),
+                              
+                              // Session Info Card
+                              FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: SlideTransition(
+                                  position: _slideAnimation,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          courseName,
+                                          style: theme.textTheme.titleLarge?.copyWith(
+                                            fontWeight: FontWeight.w900,
+                                            fontSize: 20 * dynamicScale,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.location_on_outlined,
+                                              size: 16,
+                                              color: isDark ? Colors.white60 : Colors.black45,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              room,
+                                              style: theme.textTheme.bodyMedium?.copyWith(
+                                                color: isDark ? Colors.white60 : Colors.black45,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                            if (section != null) ...[
+                                              const SizedBox(width: 12),
+                                              Icon(
+                                                Icons.groups_outlined,
+                                                size: 16,
+                                                color: isDark ? Colors.white60 : Colors.black45,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Section $section',
+                                                style: theme.textTheme.bodyMedium?.copyWith(
+                                                  color: isDark ? Colors.white60 : Colors.black45,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 32),
+                              _buildSectionTitle('Leave Details', isDark, theme),
+                              
+                              FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: SlideTransition(
+                                  position: _slideAnimation,
+                                  child: GlassCard(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      children: [
+                                        GlassTextField(
+                                          controller: _reasonController,
+                                          hintText: 'Explain why you need to miss this class...',
+                                          prefixIcon: Icons.description_outlined,
+                                          validator: (v) => FormValidators.validateRequired(v, 'Reason'),
+                                          scale: dynamicScale,
+                                        ),
+                                        const SizedBox(height: 20),
+                                        GlassTextField(
+                                          controller: _documentController,
+                                          hintText: 'Document URL (Optional)',
+                                          prefixIcon: Icons.link_rounded,
+                                          keyboardType: TextInputType.url,
+                                          scale: dynamicScale,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(height: 48),
+                              
+                              FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: GlassButton(
+                                  onPressed: _submit,
+                                  label: 'Submit Request',
+                                  isLoading: _isSubmitting,
+                                  scale: dynamicScale,
+                                  width: double.infinity,
+                                ),
+                              ),
+                              const SizedBox(height: 48),
+                            ],
+                          ),
                         ),
                       ),
-                    ] else ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        room,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF64748B),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Reason for Leave',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _reasonController,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: 'Explain why you need to miss this class...',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF94A3B8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(
-                      color: ClassTrackTheme.primaryBlue,
-                      width: 2,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.all(20),
-                ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'Please provide a reason';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Document URL (Optional)',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _documentController,
-                keyboardType: TextInputType.url,
-                decoration: InputDecoration(
-                  hintText: 'e.g. Link to medical certificate',
-                  hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF94A3B8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  filled: true,
-                  fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.all(20),
-                ),
-              ),
-              const SizedBox(height: 40),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: ClassTrackTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : Text(
-                          'Submit Request',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-              ),
-            ],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title, bool isDark, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 12),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title.toUpperCase(),
+          style: theme.textTheme.labelMedium?.copyWith(
+            letterSpacing: 1.2,
+            fontWeight: FontWeight.w800,
+            color: isDark ? Colors.white38 : const Color(0xFF94A3B8),
           ),
         ),
       ),
