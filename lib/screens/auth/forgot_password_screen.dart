@@ -4,6 +4,7 @@ import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/widgets/glass_widgets.dart';
+import 'package:classtrack/utils/form_validators.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -12,8 +13,10 @@ class ForgotPasswordScreen extends StatefulWidget {
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with TickerProviderStateMixin {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
+    with TickerProviderStateMixin {
   final TextEditingController _emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _isSuccess = false;
 
   late AnimationController _animationController;
@@ -30,18 +33,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+        curve: Interval(0.2, 1.0, curve: Curves.slowMiddle),
       ),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: const Interval(0.2, 1.0, curve: Curves.easeOutCubic),
+          ),
+        );
     _animationController.forward();
   }
 
@@ -53,23 +54,21 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
   }
 
   void _handleReset() async {
-    final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email')),
+    if (_formKey.currentState!.validate()) {
+      HapticFeedback.mediumImpact();
+      await context.read<AuthCubit>().forgotPassword(
+        _emailController.text.trim(),
       );
-      return;
-    }
 
-    HapticFeedback.mediumImpact();
-    await context.read<AuthCubit>().forgotPassword(email);
-    
-    if (mounted) {
-      setState(() {
-        _isSuccess = true;
-      });
-      _animationController.reset();
-      _animationController.forward();
+      if (mounted) {
+        setState(() {
+          _isSuccess = true;
+        });
+        _animationController.reset();
+        _animationController.forward();
+      }
+    } else {
+      HapticFeedback.heavyImpact();
     }
   }
 
@@ -95,12 +94,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                     children: [
                       // Header
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                              icon: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                              ),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF0F172A),
                               onPressed: () => Navigator.pop(context),
                             ),
                             const Spacer(),
@@ -108,7 +114,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                               'Reset Password',
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                color: isDark
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A),
                               ),
                             ),
                             const Spacer(),
@@ -116,7 +124,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                           ],
                         ),
                       ),
-                      
+
                       Expanded(
                         child: Center(
                           child: SingleChildScrollView(
@@ -130,7 +138,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
                                     position: _slideAnimation,
                                     child: GlassCard(
                                       padding: const EdgeInsets.all(32),
-                                      child: _isSuccess ? _buildSuccessState(theme, isDark, dynamicScale) : _buildFormState(theme, isDark, dynamicScale),
+                                      child: _isSuccess
+                                          ? _buildSuccessState(
+                                              theme,
+                                              isDark,
+                                              dynamicScale,
+                                            )
+                                          : Form(
+                                              key: _formKey,
+                                              child: _buildFormState(
+                                                theme,
+                                                isDark,
+                                                dynamicScale,
+                                              ),
+                                            ),
                                     ),
                                   ),
                                 ),
@@ -189,6 +210,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> with Ticker
           prefixIcon: Icons.email_outlined,
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.done,
+          validator: FormValidators.validateEmail,
           onSubmitted: (_) => _handleReset(),
           scale: dynamicScale,
         ),
