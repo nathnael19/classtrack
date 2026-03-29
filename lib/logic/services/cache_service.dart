@@ -119,19 +119,15 @@ class CacheService {
   }
 
   /// Clear all cached data — call this on logout so the next user
-  /// starts with a clean slate.
+  /// starts with a clean slate. Removes any key starting with 'cache_'.
   Future<void> clearAll() async {
-    final keys = [
-      CacheKeys.userData,
-      CacheKeys.enrolledCourses,
-      CacheKeys.upcomingSessions,
-      CacheKeys.activeSessions,
-      CacheKeys.attendanceSummary,
-      CacheKeys.attendanceHistory,
-    ];
-    for (final key in keys) {
-      await _p.remove(key);
+    final allKeys = _p.getKeys();
+    for (final key in allKeys) {
+      if (key.startsWith('cache_')) {
+        await _p.remove(key);
+      }
     }
     debugPrint('CacheService: all cache cleared.');
   }
 }
+
