@@ -6,28 +6,31 @@ class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double? borderRadius;
+  final VoidCallback? onTap;
 
   const GlassCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(32),
     this.borderRadius,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final effectiveRadius = borderRadius ?? ClassTrackTheme.bentoRadius;
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius ?? ClassTrackTheme.bentoRadius),
+      borderRadius: BorderRadius.circular(effectiveRadius),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: padding,
           decoration: BoxDecoration(
             color: isDark 
                 ? Colors.white.withValues(alpha: 0.05) 
                 : Colors.white.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(borderRadius ?? ClassTrackTheme.bentoRadius),
+            borderRadius: BorderRadius.circular(effectiveRadius),
             border: Border.all(
               color: isDark 
                   ? Colors.white.withValues(alpha: 0.1) 
@@ -35,7 +38,17 @@ class GlassCard extends StatelessWidget {
               width: 1.5,
             ),
           ),
-          child: child,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(effectiveRadius),
+              child: Padding(
+                padding: padding,
+                child: child,
+              ),
+            ),
+          ),
         ),
       ),
     );
