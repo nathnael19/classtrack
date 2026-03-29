@@ -7,14 +7,16 @@ import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/logic/cubits/theme/theme_cubit.dart';
 import 'package:classtrack/logic/cubits/attendance/attendance_cubit.dart';
+import 'package:classtrack/logic/services/cache_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Initialize SharedPreferences early to catch PlatformExceptions
+  // Initialize SharedPreferences and CacheService early, before any cubit runs
   final prefs = await SharedPreferences.getInstance();
+  await CacheService().initWithPrefs(prefs);
 
   runApp(
     MultiBlocProvider(
