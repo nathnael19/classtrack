@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:classtrack/logic/api_service.dart';
 import 'package:classtrack/logic/device_helper.dart';
+import 'package:classtrack/logic/services/cache_service.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated }
 
@@ -244,6 +245,10 @@ class AuthCubit extends Cubit<AuthState> {
       await api.deleteToken();
       await prefs.setBool('is_logged_in', false);
       await prefs.remove('user_role');
+      // Clear cached attendance data so it doesn't show up for the next login
+      final cache = CacheService();
+      await cache.init();
+      await cache.clearAll();
       emit(
         state.copyWith(
           status: AuthStatus.unauthenticated,
