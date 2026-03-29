@@ -262,4 +262,19 @@ class AuthCubit extends Cubit<AuthState> {
       );
     }
   }
+
+  Future<void> forgotPassword(String email) async {
+    debugPrint('AuthCubit: forgotPassword started for $email');
+    emit(state.copyWith(status: AuthStatus.loading, clearError: true));
+    try {
+      await api.forgotPassword(email);
+      emit(state.copyWith(status: AuthStatus.unauthenticated));
+    } catch (e) {
+      debugPrint('AuthCubit: ForgotPassword Error: $e');
+      emit(state.copyWith(
+        status: AuthStatus.unauthenticated,
+        error: 'Failed to send reset email. Please try again later.',
+      ));
+    }
+  }
 }
