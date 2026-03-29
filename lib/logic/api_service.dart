@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
@@ -9,7 +10,7 @@ class ApiService {
   final Dio dio = Dio(
     BaseOptions(
       baseUrl:
-          'http://10.240.41.67:8000', // Root for auth/token, will add /api/v1 prefix for others
+          'http://10.240.41.86:8000', // Root for auth/token, will add /api/v1 prefix for others
       connectTimeout: const Duration(seconds: 5),
       receiveTimeout: const Duration(seconds: 20),
       //http://10.240.41.67:8000/
@@ -27,6 +28,13 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
+        },
+        onError: (DioException e, handler) {
+          debugPrint(
+            'API Error [${e.response?.statusCode}]: ${e.requestOptions.path}',
+          );
+          debugPrint('Error Response: ${e.response?.data}');
+          return handler.next(e);
         },
       ),
     );
@@ -144,7 +152,7 @@ class ApiService {
       data: {
         'student_id': studentId,
         'device_id': deviceId,
-        if (deviceModel != null) 'device_model': deviceModel,
+        'device_model': ?deviceModel,
       },
     );
     return response.data;
@@ -165,5 +173,39 @@ class ApiService {
       },
     );
     return response.data;
+  }
+
+  Future<List<dynamic>> getCourseMaterials(int courseId) async {
+    final response = await dio.get(v1('/materials/course/$courseId'));
+    return response.data;
+  }
+
+  Future<void> downloadMaterial(
+    int materialId,
+    String savePath, {
+    void Function(int count, int total)? onProgress,
+  }) async {
+    await dio.download(
+      v1('/materials/$materialId/download'),
+      savePath,
+      onReceiveProgress: onProgress,
+      options: Options(
+        responseType: ResponseType.bytes,
+        followRedirects: false,
+      ),
+    );
+  }
+
+  String getMaterialUrl(int materialId) {
+    return '${dio.options.baseUrl}${v1('/materials/$materialId/download')}';
+  }
+
+  Future<void> forgotPassword(String email) async {
+    // Real call to backend endpoint
+    debugPrint('ApiService: forgotPassword calling backend for $email');
+    await dio.post(
+      '/api/v1/auth/forgot-password',
+      queryParameters: {'email': email},
+    );
   }
 }
