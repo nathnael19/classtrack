@@ -8,6 +8,7 @@ import '../../theme/design_theme.dart';
 import '../../logic/api_service.dart';
 import 'request_leave_screen.dart';
 import '../../logic/cubits/attendance/attendance_cubit.dart';
+import '../../logic/services/cache_service.dart';
 import '../../utils/time_utils.dart';
 import '../../widgets/glass_widgets.dart';
 
@@ -80,28 +81,57 @@ class _ScheduleScreenState extends State<ScheduleScreen> with TickerProviderStat
 
   Future<void> _fetchSessions() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    
+    final monday = DateTime.parse(_days[0]['fullDate']!);
+    final sunday = DateTime.parse(_days[6]['fullDate']!).add(const Duration(hours: 23, minutes: 59));
+    
+    final cacheKey = 'cache_schedule_${_days[0]['fullDate']}_${_days[6]['fullDate']}';
+    final cache = CacheService();
+
+    // 1. Read stale cache
+    final cachedData = cache.readStale<Map<String, dynamic>>(cacheKey);
+    if (cachedData != null) {
+      if (mounted) {
+        setState(() {
+          _sessions = cachedData['sessions'] ?? [];
+          _recurringSchedules = cachedData['recurring'] ?? [];
+          _isLoading = false;
+        });
+        _staggerController.reset();
+        _staggerController.forward();
+      }
+    } else {
+      setState(() => _isLoading = true);
+    }
+
     try {
-      final monday = DateTime.parse(_days[0]['fullDate']!);
-      final sunday = DateTime.parse(_days[6]['fullDate']!).add(const Duration(hours: 23, minutes: 59));
-      
       final results = await Future.wait([
         _api.getSessions(startDate: monday, endDate: sunday),
         _api.getRecurringSchedules(),
       ]);
       
+      // Save fresh data to cache (expire in 60 mins)
+      cache.write(cacheKey, {
+        'sessions': results[0],
+        'recurring': results[1],
+      }, ttlMinutes: 60);
+
       if (mounted) {
         setState(() {
           _sessions = results[0];
           _recurringSchedules = results[1];
           _isLoading = false;
         });
-        _staggerController.reset();
-        _staggerController.forward();
+        if (cachedData == null) {
+          _staggerController.reset();
+          _staggerController.forward();
+        }
       }
     } catch (e) {
       debugPrint('Error fetching schedule: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && cachedData == null) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
