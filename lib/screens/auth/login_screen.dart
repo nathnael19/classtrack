@@ -7,6 +7,7 @@ import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 import 'package:classtrack/widgets/glass_widgets.dart';
 import 'package:classtrack/screens/auth/forgot_password_screen.dart';
+import 'package:classtrack/utils/form_validators.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -19,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   bool _isPasswordVisible = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -55,6 +57,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     _passwordController.dispose();
     _animationController.dispose();
     super.dispose();
+  }
+
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      HapticFeedback.mediumImpact();
+      context.read<AuthCubit>().login(
+            _emailController.text.trim(),
+            _passwordController.text,
+            UserRole.student,
+          );
+    } else {
+      HapticFeedback.heavyImpact();
+    }
   }
 
   @override
@@ -131,103 +146,108 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               position: _slideAnimation,
                               child: GlassCard(
                                 padding: const EdgeInsets.all(24),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'University Email',
-                                      style: theme.textTheme.labelLarge?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : const Color(0xFF334155),
+                                child: Form(
+                                  key: _formKey,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'University Email',
+                                        style: theme.textTheme.labelLarge?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? Colors.white : const Color(0xFF334155),
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    GlassTextField(
-                                      controller: _emailController,
-                                      hintText: 'name@university.edu.et',
-                                      prefixIcon: Icons.email_outlined,
-                                      keyboardType: TextInputType.emailAddress,
-                                      textInputAction: TextInputAction.next,
-                                      scale: dynamicScale,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                      'Password',
-                                      style: theme.textTheme.labelLarge?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: isDark ? Colors.white : const Color(0xFF334155),
+                                      const SizedBox(height: 8),
+                                      GlassTextField(
+                                        controller: _emailController,
+                                        hintText: 'name@university.edu.et',
+                                        prefixIcon: Icons.email_outlined,
+                                        keyboardType: TextInputType.emailAddress,
+                                        textInputAction: TextInputAction.next,
+                                        validator: FormValidators.validateEmail,
+                                        scale: dynamicScale,
                                       ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    GlassTextField(
-                                      controller: _passwordController,
-                                      hintText: '••••••••',
-                                      prefixIcon: Icons.lock_outline_rounded,
-                                      obscureText: !_isPasswordVisible,
-                                      suffixIcon: _isPasswordVisible
-                                          ? Icons.visibility_outlined
-                                          : Icons.visibility_off_outlined,
-                                      onSuffixIconPressed: () {
-                                        setState(() {
-                                          _isPasswordVisible = !_isPasswordVisible;
-                                        });
-                                      },
-                                      textInputAction: TextInputAction.done,
-                                      scale: dynamicScale,
-                                      onSubmitted: (_) => _handleLogin(),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton(
-                                        onPressed: () {
-                                          HapticFeedback.lightImpact();
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => const ForgotPasswordScreen(),
-                                            ),
-                                          );
+                                      const SizedBox(height: 24),
+                                      Text(
+                                        'Password',
+                                        style: theme.textTheme.labelLarge?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: isDark ? Colors.white : const Color(0xFF334155),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      GlassTextField(
+                                        controller: _passwordController,
+                                        hintText: '••••••••',
+                                        prefixIcon: Icons.lock_outline_rounded,
+                                        obscureText: !_isPasswordVisible,
+                                        suffixIcon: _isPasswordVisible
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                        onSuffixIconPressed: () {
+                                          setState(() {
+                                            _isPasswordVisible = !_isPasswordVisible;
+                                          });
                                         },
-                                        child: Text(
-                                          'Forgot Password?',
-                                          style: theme.textTheme.labelMedium?.copyWith(
-                                            color: ClassTrackTheme.primaryBlue,
-                                            fontWeight: FontWeight.bold,
+                                        textInputAction: TextInputAction.done,
+                                        validator: (val) => FormValidators.validatePassword(val, minLength: 1),
+                                        scale: dynamicScale,
+                                        onSubmitted: (_) => _handleLogin(),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.centerRight,
+                                        child: TextButton(
+                                          onPressed: () {
+                                            HapticFeedback.lightImpact();
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const ForgotPasswordScreen(),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            'Forgot Password?',
+                                            style: theme.textTheme.labelMedium?.copyWith(
+                                              color: ClassTrackTheme.primaryBlue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    BlocConsumer<AuthCubit, AuthState>(
-                                      listener: (context, state) {
-                                        if (state.status == AuthStatus.authenticated) {
-                                          Navigator.pushReplacement(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) => const StudentDashboardScreen(),
-                                            ),
+                                      const SizedBox(height: 12),
+                                      BlocConsumer<AuthCubit, AuthState>(
+                                        listener: (context, state) {
+                                          if (state.status == AuthStatus.authenticated) {
+                                            Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const StudentDashboardScreen(),
+                                              ),
+                                            );
+                                          } else if (state.error != null) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text(state.error!),
+                                                backgroundColor: Colors.redAccent,
+                                                behavior: SnackBarBehavior.floating,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        builder: (context, state) {
+                                          return GlassButton(
+                                            onPressed: _handleLogin,
+                                            label: 'Login',
+                                            isLoading: state.status == AuthStatus.loading,
+                                            scale: dynamicScale,
+                                            width: double.infinity,
                                           );
-                                        } else if (state.error != null) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text(state.error!),
-                                              backgroundColor: Colors.redAccent,
-                                              behavior: SnackBarBehavior.floating,
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      builder: (context, state) {
-                                        return GlassButton(
-                                          onPressed: _handleLogin,
-                                          label: 'Login',
-                                          isLoading: state.status == AuthStatus.loading,
-                                          scale: dynamicScale,
-                                          width: double.infinity,
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -277,14 +297,5 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         ),
       ),
     );
-  }
-
-  void _handleLogin() {
-    HapticFeedback.mediumImpact();
-    context.read<AuthCubit>().login(
-          _emailController.text.trim(),
-          _passwordController.text,
-          UserRole.student,
-        );
   }
 }
