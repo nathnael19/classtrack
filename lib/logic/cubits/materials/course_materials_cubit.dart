@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/api_service.dart';
+import 'package:classtrack/logic/services/cache_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:open_filex/open_filex.dart';
@@ -51,47 +52,76 @@ class CourseMaterialsCubit extends Cubit<CourseMaterialsState> {
     : super(CourseMaterialsState.initial());
 
   Future<void> fetchMaterials() async {
-    emit(state.copyWith(status: CourseMaterialsStatus.loading));
+    final cache = CacheService();
+    final cacheKey = 'cache_materials_$courseId';
+
+    // 1. Read stale cache
+    final cachedMaterials = cache.readStale<List<dynamic>>(cacheKey);
+    final hasCachedData = cachedMaterials != null;
+
+    if (hasCachedData) {
+      // Optimistically emit cached materials (we will check download status after)
+      emit(state.copyWith(
+        status: CourseMaterialsStatus.success,
+        materials: cachedMaterials,
+      ));
+      // Re-verify local download status for cached items
+      _checkLocalDownloadStatus(cachedMaterials);
+    } else {
+      emit(state.copyWith(status: CourseMaterialsStatus.loading));
+    }
+
     try {
       final materials = await api.getCourseMaterials(courseId);
 
-      final Map<int, bool> downloadedStatus = {};
-      
-      if (!kIsWeb) {
-        final directory = await getApplicationDocumentsDirectory();
-        print('CourseMaterialsCubit: Successfully fetched ${materials.length} materials for course $courseId');
+      // Cache the fresh materials
+      cache.write(cacheKey, materials, ttlMinutes: 60);
 
-        for (var material in materials) {
-          try {
-            final materialId = material['id'] as int;
-            final fileName =
-                material['original_filename'] ?? 'material_$materialId';
-            final filePath = '${directory.path}/$fileName';
-            downloadedStatus[materialId] = await File(filePath).exists();
-          } catch (itemError) {
-            debugPrint('Error processing material item $material: $itemError');
-          }
-        }
-      }
+      _checkLocalDownloadStatus(materials);
 
       emit(
         state.copyWith(
           status: CourseMaterialsStatus.success,
           materials: materials,
-          isDownloaded: downloadedStatus,
         ),
       );
     } catch (e, stackTrace) {
       debugPrint('CourseMaterialsCubit.fetchMaterials Error: $e');
       debugPrint('Stack Trace: $stackTrace');
-      emit(
-        state.copyWith(
-          status: CourseMaterialsStatus.failure,
-          error: e.toString(),
-        ),
-      );
+      if (!hasCachedData) {
+        emit(
+          state.copyWith(
+            status: CourseMaterialsStatus.failure,
+            error: e.toString(),
+          ),
+        );
+      }
     }
   }
+
+  Future<void> _checkLocalDownloadStatus(List<dynamic> materials) async {
+    final Map<int, bool> downloadedStatus = {};
+
+    if (!kIsWeb) {
+      final directory = await getApplicationDocumentsDirectory();
+      for (var material in materials) {
+        try {
+          final materialId = material['id'] as int;
+          final fileName =
+              material['original_filename'] ?? 'material_$materialId';
+          final filePath = '${directory.path}/$fileName';
+          downloadedStatus[materialId] = await File(filePath).exists();
+        } catch (itemError) {
+          debugPrint('Error processing material item $material: $itemError');
+        }
+      }
+    }
+
+    if (!isClosed) {
+      emit(state.copyWith(isDownloaded: downloadedStatus));
+    }
+  }
+
 
   Future<void> downloadMaterial(Map<String, dynamic> material) async {
     final materialId = material['id'] as int;
