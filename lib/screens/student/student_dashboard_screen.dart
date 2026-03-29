@@ -342,23 +342,24 @@ class _DashboardHome extends StatelessWidget {
             _SlideFadeIn(
               delay: 0,
               child: DashboardHeader(
-                date: dateStr, 
+                date: dateStr,
                 greeting: '$greeting, $userName',
               ),
             ),
             const SizedBox(height: 28),
-            
+
             // Bento Grid Section (Attendance + Next Class)
             _SlideFadeIn(
               delay: 100,
               child: AttendanceStatusCard(
                 percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
                 status: attendanceSummary?['status'] ?? 'Calculating...',
-                message: attendanceSummary?['message'] ?? 'Fetching your records...',
+                message:
+                    attendanceSummary?['message'] ?? 'Fetching your records...',
               ),
             ),
             const SizedBox(height: 24),
-            
+
             if (activeSessions.isNotEmpty)
               _SlideFadeIn(
                 delay: 200,
@@ -377,21 +378,18 @@ class _DashboardHome extends StatelessWidget {
                 delay: 200,
                 child: _buildNoActiveClassCard(theme, isDark),
               ),
-              
+
             const SizedBox(height: 32),
-            
+
             if (enrolledCourses.isNotEmpty)
               _SlideFadeIn(
                 delay: 300,
                 child: _buildMyCoursesSection(context, theme, isDark),
               ),
-              
+
             const SizedBox(height: 24),
-            _SlideFadeIn(
-              delay: 400,
-              child: _buildScanButton(context),
-            ),
-            
+            _SlideFadeIn(delay: 400, child: _buildScanButton(context)),
+
             const SizedBox(height: 48),
             _SlideFadeIn(
               delay: 500,
@@ -425,12 +423,16 @@ class _DashboardHome extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
+                color: (isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 Icons.event_busy_rounded,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: isDark
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF94A3B8),
                 size: 24,
               ),
             ),
@@ -440,7 +442,9 @@ class _DashboardHome extends StatelessWidget {
                 'No active classes right now.',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF64748B),
                 ),
               ),
             ),
@@ -460,7 +464,9 @@ class _DashboardHome extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => QRScannerScreen(
-                sessionId: activeSessions.isNotEmpty ? activeSessions[0]['id'] : null,
+                sessionId: activeSessions.isNotEmpty
+                    ? activeSessions[0]['id']
+                    : null,
               ),
             ),
           );
@@ -493,7 +499,11 @@ class _DashboardHome extends StatelessWidget {
     );
   }
 
-  Widget _buildMyCoursesSection(BuildContext context, ThemeData theme, bool isDark) {
+  Widget _buildMyCoursesSection(
+    BuildContext context,
+    ThemeData theme,
+    bool isDark,
+  ) {
     final displayCourses = enrolledCourses.take(4).toList();
 
     return Column(
@@ -542,11 +552,12 @@ class _DashboardHome extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 4),
             scrollDirection: Axis.horizontal,
             itemCount: displayCourses.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final course = displayCourses[index];
               final courseId = course['id'] as int;
-              final courseName = course['name'] ?? course['course_name'] ?? 'Course';
+              final courseName =
+                  course['name'] ?? course['course_name'] ?? 'Course';
               final courseCode = course['code'] ?? course['course_code'] ?? '';
 
               final colors = [
@@ -603,7 +614,11 @@ class _DashboardHome extends StatelessWidget {
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: const Icon(Icons.folder_shared_rounded, color: Colors.white, size: 14),
+                              child: const Icon(
+                                Icons.folder_shared_rounded,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -682,13 +697,17 @@ class _DashboardHome extends StatelessWidget {
               Icon(
                 Icons.calendar_today_rounded,
                 size: 48,
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: isDark
+                    ? const Color(0xFF334155)
+                    : const Color(0xFFE2E8F0),
               ),
               const SizedBox(height: 16),
               Text(
                 'No upcoming sessions scheduled.',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                  color: isDark
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFF94A3B8),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -710,7 +729,8 @@ class _DashboardHome extends StatelessWidget {
               icon: Icons.school_rounded,
               iconColor: ClassTrackTheme.primaryBlue,
               iconBg: ClassTrackTheme.primaryBlue.withOpacity(0.1),
-              title: session['topic'] ?? session['course_name'] ?? 'Class Session',
+              title:
+                  session['topic'] ?? session['course_name'] ?? 'Class Session',
               section: session['section'],
               time: DateFormat('h:mm a').format(startTime),
               location: session['room'] ?? 'N/A',
