@@ -46,26 +46,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _pickImage() async {
     final currentContext = context;
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      
       if (image != null) {
         setState(() => _isLoading = true);
         final api = ApiService();
         final response = await api.uploadProfilePicture(File(image.path));
+        
         if (mounted) {
           setState(() {
             _userData = response;
             _isLoading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated successfully')),
+            const SnackBar(
+              content: Text('Profile picture updated'),
+              backgroundColor: Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+            ),
           );
         }
       }
     } catch (e) {
       if (!currentContext.mounted) return;
+      
+      String message = 'Failed to pick image';
+      if (e.toString().contains('photo_access_denied')) {
+        message = 'Photo gallery access denied. Please check settings.';
+      } else if (e.toString().contains('camera_access_denied')) {
+        message = 'Camera access denied. Please check settings.';
+      }
+
       ScaffoldMessenger.of(currentContext).showSnackBar(
-        const SnackBar(content: Text('Failed to pick image')),
+        SnackBar(
+          content: Text(message),
+          backgroundColor: const Color(0xFFEF4444),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
+      setState(() => _isLoading = false);
     }
   }
 
