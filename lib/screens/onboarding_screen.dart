@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:classtrack/theme/design_theme.dart';
 import 'package:classtrack/screens/auth/login_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/onboarding/onboarding_cubit.dart';
+import 'package:classtrack/widgets/glass_widgets.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -87,7 +87,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
             builder: (context, constraints) {
               final h = constraints.maxHeight;
               final isSmall = h < 700;
-              final dynamicScale = (h / 844.0).clamp(0.8, 1.2); // Based on iPhone 12/13 height
+              final dynamicScale = (h / 844.0).clamp(0.8, 1.2);
 
               return SafeArea(
                 child: Column(
@@ -102,7 +102,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           if (_currentPage < _pages.length - 1)
-                            _buildGlassButton(
+                            GlassButton(
                               onPressed: () async {
                                 HapticFeedback.lightImpact();
                                 final onboardingCubit = context.read<OnboardingCubit>();
@@ -116,6 +116,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                               label: 'Skip',
                               isSecondary: true,
                               scale: dynamicScale,
+                              width: 80,
+                              height: 48,
                             ),
                         ],
                       ),
@@ -145,7 +147,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    // Glass Illustration Wrapper
                                     FadeTransition(
                                       opacity: _fadeAnimation,
                                       child: SlideTransition(
@@ -163,7 +164,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                                       ),
                                     ),
                                     SizedBox(height: isSmall ? 32 : 48),
-                                    // Text Bento
                                     FadeTransition(
                                       opacity: _fadeAnimation,
                                       child: SlideTransition(
@@ -205,12 +205,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                       ),
                     ),
 
-                    // Bottom Controls (Bento Style)
+                    // Bottom Controls
                     Padding(
                       padding: EdgeInsets.all(isSmall ? 16 : 24.0),
                       child: Column(
                         children: [
-                          // Liquid Indicator
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(
@@ -240,7 +239,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                             ),
                           ),
                           SizedBox(height: isSmall ? 24 : 40),
-                          // Action Buttons Bento
                           Row(
                             children: [
                               if (_currentPage > 0)
@@ -248,7 +246,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                                   flex: 1,
                                   child: Padding(
                                     padding: const EdgeInsets.only(right: 12.0),
-                                    child: _buildGlassButton(
+                                    child: GlassButton(
                                       onPressed: () {
                                         HapticFeedback.lightImpact();
                                         _pageController.previousPage(
@@ -264,7 +262,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                                 ),
                               Expanded(
                                 flex: 3,
-                                child: _buildGlassButton(
+                                child: GlassButton(
                                   onPressed: () async {
                                     HapticFeedback.mediumImpact();
                                     if (_currentPage < _pages.length - 1) {
@@ -298,147 +296,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildGlassButton({
-    required VoidCallback onPressed,
-    String? label,
-    IconData? icon,
-    bool isSecondary = false,
-    double scale = 1.0,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      height: 64 * scale.clamp(0.85, 1.0),
-      decoration: BoxDecoration(
-        color: isSecondary
-            ? Colors.transparent
-            : ClassTrackTheme.primaryBlue,
-        borderRadius: BorderRadius.circular(20),
-        border: isSecondary
-            ? Border.all(
-                color: isDark ? Colors.white12 : Colors.black12,
-                width: 1,
-              )
-            : null,
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (label != null)
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: isSecondary 
-                          ? (isDark ? Colors.white : Colors.black87) 
-                          : Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                if (label != null && icon != null) const SizedBox(width: 8),
-                if (icon != null)
-                  Icon(
-                    icon,
-                    color: isSecondary 
-                        ? (isDark ? Colors.white : Colors.black87) 
-                        : Colors.white,
-                    size: 20,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class GlassCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry padding;
-  const GlassCard({super.key, required this.child, required this.padding});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(ClassTrackTheme.bentoRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(ClassTrackTheme.bentoRadius),
-            border: Border.all(
-              color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class DynamicBackground extends StatelessWidget {
-  const DynamicBackground({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Stack(
-      children: [
-        Positioned(
-          top: -100,
-          right: -100,
-          child: _BlurredCircle(
-            size: 300,
-            color: ClassTrackTheme.primaryBlue.withValues(alpha: isDark ? 0.15 : 0.1),
-          ),
-        ),
-        Positioned(
-          bottom: -50,
-          left: -100,
-          child: _BlurredCircle(
-            size: 400,
-            color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.1 : 0.05),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BlurredCircle extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _BlurredCircle({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 80, sigmaY: 80),
-        child: const SizedBox.expand(),
       ),
     );
   }
