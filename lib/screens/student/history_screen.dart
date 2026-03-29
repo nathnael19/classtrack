@@ -90,6 +90,51 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
         final summary = state.summary;
         final isLoading = state.status == AttendanceStatus.loading;
 
+        // --- Filtering and Sorting Logic ---
+        final now = DateTime.now();
+        final filteredHistory = history.where((record) {
+          // 1. Course Filter
+          if (_selectedCourse != 'All Courses' && record['course_name'] != _selectedCourse) {
+            return false;
+          }
+
+          // 2. Date/Period Filter
+          final recordDate = DateTime.parse(record['timestamp']).toLocal();
+
+          if (_selectedDate != null) {
+            // Calendar date overrides period
+            if (recordDate.year != _selectedDate!.year ||
+                recordDate.month != _selectedDate!.month ||
+                recordDate.day != _selectedDate!.day) {
+              return false;
+            }
+          } else {
+            // Use Period dropdown
+            switch (_selectedPeriod) {
+              case 'This Month':
+                if (recordDate.month != now.month || recordDate.year != now.year) return false;
+                break;
+              case 'Last Month':
+                final lastMonth = DateTime(now.year, now.month - 1);
+                if (recordDate.month != lastMonth.month || recordDate.year != lastMonth.year) return false;
+                break;
+              case 'This Semester':
+                // Simple semester logic: last 5 months
+                final semesterStart = now.subtract(const Duration(days: 150));
+                if (recordDate.isBefore(semesterStart)) return false;
+                break;
+              default:
+                break;
+            }
+          }
+          return true;
+        }).toList();
+
+        // Sort by newest first
+        filteredHistory.sort((a, b) =>
+            DateTime.parse(b['timestamp']).compareTo(DateTime.parse(a['timestamp'])));
+        // ------------------------------------
+
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
           body: Stack(
@@ -106,14 +151,10 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
                           _staggerController.reset();
                           _staggerController.forward();
                         },
-                        backgroundColor: isDark
-                            ? const Color(0xFF1E293B)
-                            : Colors.white,
+                        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                         color: const Color(0xFF6366F1),
                         child: SingleChildScrollView(
-                          physics: const BouncingScrollPhysics(
-                            parent: AlwaysScrollableScrollPhysics(),
-                          ),
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,76 +167,46 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
                                   selectedPeriod: _selectedPeriod,
                                   courses: [
                                     'All Courses',
-                                    ...history
-                                        .map((e) => e['course_name'] as String)
-                                        .toSet(),
-                                  ],
-                                  periods: const [
-                                    'This Month',
-                                    'Last Month',
-                                    'This Semester',
-                                  ],
-                                  onCourseChanged: (val) =>
-                                      setState(() => _selectedCourse = val!),
-                                  onPeriodChanged: (val) =>
-                                      setState(() => _selectedPeriod = val!),
+                                    ...history.map((e) => e['course_name'] as String).toSet(),
+                                  ]..sort(),
+                                  periods: const ['This Month', 'Last Month', 'This Semester'],
+                                  onCourseChanged: (val) => setState(() => _selectedCourse = val!),
+                                  onPeriodChanged: (val) => setState(() => _selectedPeriod = val!),
                                 ),
                               ),
                               const SizedBox(height: 24),
                               _buildTransitionItem(
                                 index: 1,
                                 child: HistoryStatsCard(
-                                  averagePercentage: summary != null
-                                      ? '${(summary['percent'] * 100).toInt()}%'
-                                      : '--%',
+                                  averagePercentage: summary != null ? '${(summary['percent'] * 100).toInt()}%' : '--%',
                                   totalClasses: summary?['total_classes'] ?? 0,
                                   absences: summary?['absent_count'] ?? 0,
                                   improvementText: 'Active',
-                                  chartPoints:
-                                      summary != null &&
-                                          summary['weekly_stats'] != null
-                                      ? (summary['weekly_stats'] as List)
-                                            .asMap()
-                                            .entries
-                                            .map((e) {
-                                              return Offset(
-                                                e.key / 4.0,
-                                                1.0 - (e.value as double),
-                                              );
-                                            })
-                                            .toList()
-                                      : const [
-                                          Offset(0, 1),
-                                          Offset(0.25, 0.8),
-                                          Offset(0.5, 0.9),
-                                          Offset(0.75, 0.6),
-                                          Offset(1, 0.7),
-                                        ],
+                                  chartPoints: summary != null && summary['weekly_stats'] != null
+                                      ? (summary['weekly_stats'] as List).asMap().entries.map((e) {
+                                          return Offset(e.key / 4.0, 1.0 - (e.value as double));
+                                        }).toList()
+                                      : const [Offset(0, 1), Offset(0.25, 0.8), Offset(0.5, 0.9), Offset(0.75, 0.6), Offset(1, 0.7)],
                                 ),
                               ),
                               const SizedBox(height: 32),
                               _buildTransitionItem(
                                 index: 2,
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       'RECENT RECORDS',
                                       style: GoogleFonts.firaCode(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w900,
-                                        color: isDark
-                                            ? Colors.white38
-                                            : Colors.black38,
+                                        color: isDark ? Colors.white38 : Colors.black38,
                                         letterSpacing: 1.5,
                                       ),
                                     ),
                                     if (_selectedDate != null)
                                       GestureDetector(
-                                        onTap: () => setState(
-                                          () => _selectedDate = null,
-                                        ),
+                                        onTap: () => setState(() => _selectedDate = null),
                                         child: Text(
                                           'CLEAR DATE',
                                           style: GoogleFonts.firaCode(
@@ -210,83 +221,39 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
                               ),
                               const SizedBox(height: 16),
                               if (isLoading)
-                                const Center(
-                                  child: CircularProgressIndicator(
-                                    color: Color(0xFF6366F1),
-                                  ),
-                                )
-                              else if (history.isEmpty)
+                                const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                              else if (filteredHistory.isEmpty)
                                 _buildEmptyState(isDark)
                               else
-                                ...history
-                                    .where((record) {
-                                      if (_selectedCourse != 'All Courses' &&
-                                          record['course_name'] !=
-                                              _selectedCourse)
-                                        return false;
-                                      if (_selectedDate != null) {
-                                        final ts = DateTime.parse(
-                                          record['timestamp'],
-                                        ).toLocal();
-                                        if (ts.year != _selectedDate!.year ||
-                                            ts.month != _selectedDate!.month ||
-                                            ts.day != _selectedDate!.day)
-                                          return false;
-                                      }
-                                      return true;
-                                    })
-                                    .toList()
-                                    .asMap()
-                                    .entries
-                                    .map((entry) {
-                                      final index = entry.key;
-                                      final record = entry.value;
-                                      final timestamp = DateTime.parse(
-                                        record['timestamp'],
-                                      ).toLocal();
-                                      final status =
-                                          record['status']
-                                              ?.toString()
-                                              .toUpperCase() ??
-                                          'PRESENT';
+                                ...filteredHistory.asMap().entries.map((entry) {
+                                  final index = entry.key;
+                                  final record = entry.value;
+                                  final timestamp = DateTime.parse(record['timestamp']).toLocal();
+                                  final status = record['status']?.toString().toUpperCase() ?? 'PRESENT';
 
-                                      Color statusColor;
-                                      switch (status) {
-                                        case 'PRESENT':
-                                          statusColor = const Color(0xFF22C55E);
-                                          break;
-                                        case 'LATE':
-                                          statusColor = const Color(0xFFF97316);
-                                          break;
-                                        default:
-                                          statusColor = const Color(0xFFEF4444);
-                                      }
+                                  Color statusColor;
+                                  switch (status) {
+                                    case 'PRESENT': statusColor = const Color(0xFF22C55E); break;
+                                    case 'LATE': statusColor = const Color(0xFFF97316); break;
+                                    default: statusColor = const Color(0xFFEF4444);
+                                  }
 
-                                      return _buildTransitionItem(
-                                        index: index + 3,
-                                        child: HistorySessionItem(
-                                          course:
-                                              record['course_name'] ??
-                                              'Unknown Course',
-                                          section: record['section'],
-                                          dateTime: DateFormat(
-                                            'MMM d, yyyy • h:mm a',
-                                          ).format(timestamp),
-                                          timestamp: timestamp,
-                                          status: status,
-                                          icon: Icons.class_outlined,
-                                          statusColor: statusColor,
-                                          onTap:
-                                              status == 'PRESENT'
-                                                  ? null
-                                                  : () => _showSessionOptions(
-                                                    context,
-                                                    record,
-                                                    isDark,
-                                                  ),
-                                        ),
-                                      );
-                                    }),
+                                  return _buildTransitionItem(
+                                    index: index + 3,
+                                    child: HistorySessionItem(
+                                      course: record['course_name'] ?? 'Unknown Course',
+                                      section: record['section'],
+                                      dateTime: DateFormat('MMM d, yyyy • h:mm a').format(timestamp),
+                                      timestamp: timestamp,
+                                      status: status,
+                                      icon: Icons.class_outlined,
+                                      statusColor: statusColor,
+                                      onTap: status == 'PRESENT'
+                                          ? null
+                                          : () => _showSessionOptions(context, record, isDark),
+                                    ),
+                                  );
+                                }),
                               const SizedBox(height: 100),
                             ],
                           ),
