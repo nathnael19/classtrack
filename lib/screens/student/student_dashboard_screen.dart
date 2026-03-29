@@ -39,6 +39,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
           userData: state.userData,
           attendanceSummary: state.summary,
           isLoading: state.status == AttendanceStatus.loading,
+          isLoadingSecondary: state.isLoadingSecondary,
           onRefresh: () => context.read<AttendanceCubit>().refresh(),
         );
       },
@@ -296,6 +297,7 @@ class _DashboardHome extends StatelessWidget {
   final Map<String, dynamic>? userData;
   final Map<String, dynamic>? attendanceSummary;
   final bool isLoading;
+  final bool isLoadingSecondary;
   final Future<void> Function() onRefresh;
 
   const _DashboardHome({
@@ -305,6 +307,7 @@ class _DashboardHome extends StatelessWidget {
     this.userData,
     this.attendanceSummary,
     required this.isLoading,
+    this.isLoadingSecondary = false,
     required this.onRefresh,
   });
 
@@ -351,12 +354,13 @@ class _DashboardHome extends StatelessWidget {
             // Bento Grid Section (Attendance + Next Class)
             _SlideFadeIn(
               delay: 100,
-              child: AttendanceStatusCard(
-                percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
-                status: attendanceSummary?['status'] ?? 'Calculating...',
-                message:
-                    attendanceSummary?['message'] ?? 'Fetching your records...',
-              ),
+              child: isLoadingSecondary && attendanceSummary == null
+                  ? const _AttendanceCardSkeleton()
+                  : AttendanceStatusCard(
+                      percent: attendanceSummary?['percent']?.toDouble() ?? 0.0,
+                      status: attendanceSummary?['status'] ?? 'Ready',
+                      message: attendanceSummary?['message'] ?? '',
+                    ),
             ),
             const SizedBox(height: 24),
 
@@ -765,6 +769,110 @@ class _SlideFadeIn extends StatelessWidget {
         );
       },
       child: child,
+    );
+  }
+}
+
+/// Pulsing skeleton shown in place of the attendance card while
+/// the summary API response is still in-flight.
+class _AttendanceCardSkeleton extends StatefulWidget {
+  const _AttendanceCardSkeleton();
+
+  @override
+  State<_AttendanceCardSkeleton> createState() =>
+      _AttendanceCardSkeletonState();
+}
+
+class _AttendanceCardSkeletonState extends State<_AttendanceCardSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _animation = Tween<double>(begin: 0.4, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor =
+        isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0);
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        return Opacity(
+          opacity: _animation.value,
+          child: Container(
+            height: 120,
+            decoration: BoxDecoration(
+              color: baseColor,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : const Color(0xFFCBD5E1),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          height: 16,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          height: 12,
+                          width: 140,
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFCBD5E1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
