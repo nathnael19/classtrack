@@ -204,6 +204,7 @@ class GlassTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final Function(String)? onSubmitted;
+  final String? Function(String?)? validator;
   final double scale;
 
   const GlassTextField({
@@ -217,6 +218,7 @@ class GlassTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.onSubmitted,
+    this.validator,
     this.scale = 1.0,
   });
 
@@ -225,38 +227,68 @@ class GlassTextField extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
-        ),
+    return TextFormField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      style: theme.textTheme.bodyLarge?.copyWith(
+        fontSize: 16 * scale.clamp(0.9, 1.0),
       ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        textInputAction: textInputAction,
-        onSubmitted: onSubmitted,
-        style: theme.textTheme.bodyLarge?.copyWith(
-          fontSize: 16 * scale.clamp(0.9, 1.0),
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: const Color(0xFF94A3B8),
+          fontSize: 14 * scale.clamp(0.9, 1.0),
         ),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: theme.textTheme.bodyMedium?.copyWith(
-            color: const Color(0xFF94A3B8),
-            fontSize: 14 * scale.clamp(0.9, 1.0),
+        prefixIcon: Icon(prefixIcon, color: const Color(0xFF94A3B8), size: 20 * scale),
+        suffixIcon: suffixIcon != null
+            ? IconButton(
+                icon: Icon(suffixIcon, color: const Color(0xFF94A3B8), size: 18 * scale),
+                onPressed: onSuffixIconPressed,
+              )
+            : null,
+        filled: true,
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
           ),
-          prefixIcon: Icon(prefixIcon, color: const Color(0xFF94A3B8), size: 20 * scale),
-          suffixIcon: suffixIcon != null
-              ? IconButton(
-                  icon: Icon(suffixIcon, color: const Color(0xFF94A3B8), size: 18 * scale),
-                  onPressed: onSuffixIconPressed,
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: ClassTrackTheme.primaryBlue,
+            width: 1.5,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: Colors.redAccent,
+            width: 1.5,
+          ),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: Colors.redAccent,
+            width: 2,
+          ),
+        ),
+        errorStyle: theme.textTheme.bodySmall?.copyWith(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
@@ -269,6 +301,7 @@ class GlassDropdown<T> extends StatelessWidget {
   final ValueChanged<T?>? onChanged;
   final String hintText;
   final IconData prefixIcon;
+  final String? Function(T?)? validator;
   final double scale;
 
   const GlassDropdown({
@@ -278,6 +311,7 @@ class GlassDropdown<T> extends StatelessWidget {
     required this.onChanged,
     required this.hintText,
     required this.prefixIcon,
+    this.validator,
     this.scale = 1.0,
   });
 
@@ -286,40 +320,64 @@ class GlassDropdown<T> extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
-        ),
+    return DropdownButtonFormField<T>(
+      value: value,
+      isExpanded: true,
+      validator: validator,
+      hint: Row(
+        children: [
+          Icon(prefixIcon, color: const Color(0xFF94A3B8), size: 20 * scale),
+          const SizedBox(width: 12),
+          Text(
+            hintText,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF94A3B8),
+              fontSize: 14 * scale.clamp(0.9, 1.0),
+            ),
+          ),
+        ],
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          hint: Row(
-            children: [
-              Icon(prefixIcon, color: const Color(0xFF94A3B8), size: 20 * scale),
-              const SizedBox(width: 12),
-              Text(
-                hintText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF94A3B8),
-                  fontSize: 14 * scale.clamp(0.9, 1.0),
-                ),
-              ),
-            ],
-          ),
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: Color(0xFF94A3B8),
-          ),
-          items: items,
-          onChanged: onChanged,
-          dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: Color(0xFF94A3B8),
+      ),
+      items: items,
+      onChanged: onChanged,
+      dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : const Color(0xFFE2E8F0),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: ClassTrackTheme.primaryBlue,
+            width: 1.5,
+          ),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(
+            color: Colors.redAccent,
+            width: 1.5,
+          ),
+        ),
+        errorStyle: theme.textTheme.bodySmall?.copyWith(
+          color: Colors.redAccent,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
