@@ -1,7 +1,8 @@
+import 'dart:io';
 import 'dart:ui';
-import 'package:classtrack/theme/design_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:classtrack/widgets/glass_widgets.dart';
 import 'package:classtrack/utils/form_validators.dart';
 import '../../logic/api_service.dart';
@@ -38,6 +39,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -125,6 +129,25 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        setState(() => _imageFile = File(image.path));
+        HapticFeedback.lightImpact();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to pick image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
       HapticFeedback.heavyImpact();
@@ -135,6 +158,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     HapticFeedback.mediumImpact();
 
     try {
+      // 1. Upload Image if changed
+      if (_imageFile != null) {
+        await _apiService.uploadProfilePicture(_imageFile!);
+      }
+
+      // 2. Update other profile data
       final updateData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
@@ -174,7 +203,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update profile: $e'),
+            content: Text('Update failed: $e'),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
           ),
@@ -246,7 +275,12 @@ class _EditProfileScreenState extends State<EditProfileScreen>
                                 key: _formKey,
                                 child: Column(
                                   children: [
-                                    SizedBox(height: 16 * dynamicScale),
+                                    SizedBox(height: 20 * dynamicScale),
+                                    
+                                    // Profile Picture Section
+                                    _buildAvatarPicker(theme, isDark, dynamicScale),
+                                    
+                                    SizedBox(height: 32 * dynamicScale),
 
                                     // Personal Info Section
                                     _buildSectionTitle(
@@ -542,6 +576,85 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarPicker(ThemeData theme, bool isDark, double scale) {
+    return FadeTransition(
+      opacity: _fadeAnimation,
+      child: Center(
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 120 * scale,
+              height: 120 * scale,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF6366F1).withOpacity(0.2),
+                    const Color(0xFFA855F7).withOpacity(0.1),
+                  ],
+                ),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                  width: 2,
+                ),
+              ),
+              child: ClipOval(
+                child: _imageFile != null
+                    ? Image.file(_imageFile!, fit: BoxFit.cover)
+                    : widget.userData['profile_picture_url'] != null
+                        ? Image.network(
+                            '${_apiService.dio.options.baseUrl}${widget.userData['profile_picture_url']}',
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+                          )
+                        : _buildPlaceholderIcon(),
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: GestureDetector(
+                onTap: _pickImage,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: theme.scaffoldBackgroundColor,
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderIcon() {
+    return Icon(
+      Icons.person_outline_rounded,
+      size: 48,
+      color: Colors.white.withOpacity(0.3),
     );
   }
 
