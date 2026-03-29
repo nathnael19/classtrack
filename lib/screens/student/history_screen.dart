@@ -276,11 +276,14 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
                                           status: status,
                                           icon: Icons.class_outlined,
                                           statusColor: statusColor,
-                                          onTap: () => _showSessionOptions(
-                                            context,
-                                            record,
-                                            isDark,
-                                          ),
+                                          onTap:
+                                              status == 'PRESENT'
+                                                  ? null
+                                                  : () => _showSessionOptions(
+                                                    context,
+                                                    record,
+                                                    isDark,
+                                                  ),
                                         ),
                                       );
                                     }),
@@ -436,6 +439,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
     bool isDark,
   ) {
     final isAbsent = record['status']?.toString().toUpperCase() == 'ABSENT';
+    final isPresent = record['status']?.toString().toUpperCase() == 'PRESENT';
 
     showModalBottomSheet(
       context: context,
@@ -499,7 +503,7 @@ class _AttendanceHistoryScreenState extends State<AttendanceHistoryScreen>
                   scale: 1.0,
                   width: double.infinity,
                 ),
-              ] else
+              ] else if (!isPresent)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Text(
