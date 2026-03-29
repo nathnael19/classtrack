@@ -83,100 +83,116 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
       body: Stack(
         children: [
           const DynamicBackground(),
-          SafeArea(
-            child: Column(
-              children: [
-                // Top Header (Skip Button)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (_currentPage < _pages.length - 1)
-                        _buildGlassButton(
-                          onPressed: () async {
-                            HapticFeedback.lightImpact();
-                            final onboardingCubit = context.read<OnboardingCubit>();
-                            await onboardingCubit.completeOnboarding();
-                            if (!context.mounted) return;
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => const LoginScreen()),
-                            );
-                          },
-                          label: 'Skip',
-                          isSecondary: true,
-                        ),
-                    ],
-                  ),
-                ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final h = constraints.maxHeight;
+              final isSmall = h < 700;
+              final dynamicScale = (h / 844.0).clamp(0.8, 1.2); // Based on iPhone 12/13 height
 
-                // PageView Content
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _pages.length,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentPage = index;
-                      });
-                      _animationController.reset();
-                      _animationController.forward();
-                    },
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // Glass Illustration Wrapper
-                            Expanded(
-                              flex: 3,
-                              child: FadeTransition(
-                                opacity: _fadeAnimation,
-                                child: SlideTransition(
-                                  position: _slideAnimation,
-                                  child: GlassCard(
-                                    child: Center(
-                                      child: Image.asset(
-                                        _pages[index].imagePath,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
+              return SafeArea(
+                child: Column(
+                  children: [
+                    // Top Header (Skip Button)
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: isSmall ? 8 : 16,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (_currentPage < _pages.length - 1)
+                            _buildGlassButton(
+                              onPressed: () async {
+                                HapticFeedback.lightImpact();
+                                final onboardingCubit = context.read<OnboardingCubit>();
+                                await onboardingCubit.completeOnboarding();
+                                if (!context.mounted) return;
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                );
+                              },
+                              label: 'Skip',
+                              isSecondary: true,
+                              scale: dynamicScale,
                             ),
-                            const SizedBox(height: 48),
-                            // Text Bento
-                            FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: SlideTransition(
-                                position: _slideAnimation,
+                        ],
+                      ),
+                    ),
+
+                    // PageView Content
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: _pages.length,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                          _animationController.reset();
+                          _animationController.forward();
+                        },
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                            child: SingleChildScrollView(
+                              physics: const BouncingScrollPhysics(),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minHeight: constraints.maxHeight - (isSmall ? 250 : 350),
+                                ),
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text(
-                                      _pages[index].title,
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.displayLarge?.copyWith(
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.w800,
-                                        letterSpacing: -0.5,
+                                    // Glass Illustration Wrapper
+                                    FadeTransition(
+                                      opacity: _fadeAnimation,
+                                      child: SlideTransition(
+                                        position: _slideAnimation,
+                                        child: GlassCard(
+                                          padding: EdgeInsets.all(isSmall ? 16 : 32),
+                                          child: Center(
+                                            child: Image.asset(
+                                              _pages[index].imagePath,
+                                              fit: BoxFit.contain,
+                                              height: isSmall ? 180 : 260,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 16),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                      child: Text(
-                                        _pages[index].description,
-                                        textAlign: TextAlign.center,
-                                        style: theme.textTheme.bodyLarge?.copyWith(
-                                          height: 1.6,
-                                          fontSize: 16,
-                                          color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                    SizedBox(height: isSmall ? 32 : 48),
+                                    // Text Bento
+                                    FadeTransition(
+                                      opacity: _fadeAnimation,
+                                      child: SlideTransition(
+                                        position: _slideAnimation,
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              _pages[index].title,
+                                              textAlign: TextAlign.center,
+                                              style: theme.textTheme.displayLarge?.copyWith(
+                                                fontSize: 28 * dynamicScale,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: -0.5,
+                                              ),
+                                            ),
+                                            SizedBox(height: 16 * dynamicScale),
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                              child: Text(
+                                                _pages[index].description,
+                                                textAlign: TextAlign.center,
+                                                style: theme.textTheme.bodyLarge?.copyWith(
+                                                  height: 1.6,
+                                                  fontSize: 16 * dynamicScale,
+                                                  color: isDark ? Colors.white70 : const Color(0xFF475569),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -184,100 +200,102 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
                                 ),
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                // Bottom Controls (Bento Style)
-                Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    children: [
-                      // Liquid Indicator
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          _pages.length,
-                          (index) => AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.elasticOut,
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentPage == index ? 32 : 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: _currentPage == index
-                                  ? ClassTrackTheme.primaryBlue
-                                  : ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(6),
-                              boxShadow: _currentPage == index
-                                  ? [
-                                      BoxShadow(
-                                        color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ]
-                                  : [],
-                            ),
-                          ),
-                        ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 40),
-                      // Action Buttons Bento
-                      Row(
+                    ),
+
+                    // Bottom Controls (Bento Style)
+                    Padding(
+                      padding: EdgeInsets.all(isSmall ? 16 : 24.0),
+                      child: Column(
                         children: [
-                          if (_currentPage > 0)
-                            Expanded(
-                              flex: 1,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 12.0),
-                                child: _buildGlassButton(
-                                  onPressed: () {
-                                    HapticFeedback.lightImpact();
-                                    _pageController.previousPage(
-                                      duration: const Duration(milliseconds: 600),
-                                      curve: Curves.easeOutQuart,
-                                    );
-                                  },
-                                  icon: Icons.arrow_back_rounded,
-                                  isSecondary: true,
+                          // Liquid Indicator
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              _pages.length,
+                              (index) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.elasticOut,
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: _currentPage == index ? 32 : 12,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: _currentPage == index
+                                      ? ClassTrackTheme.primaryBlue
+                                      : ClassTrackTheme.primaryBlue.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(5),
+                                  boxShadow: _currentPage == index
+                                      ? [
+                                          BoxShadow(
+                                            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.4),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : [],
                                 ),
                               ),
                             ),
-                          Expanded(
-                            flex: 3,
-                            child: _buildGlassButton(
-                              onPressed: () async {
-                                HapticFeedback.mediumImpact();
-                                if (_currentPage < _pages.length - 1) {
-                                  _pageController.nextPage(
-                                    duration: const Duration(milliseconds: 600),
-                                    curve: Curves.easeOutQuart,
-                                  );
-                                } else {
-                                  final onboardingCubit = context.read<OnboardingCubit>();
-                                  await onboardingCubit.completeOnboarding();
-                                  if (!context.mounted) return;
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                                  );
-                                }
-                              },
-                              label: _currentPage == _pages.length - 1 ? 'Start Learning' : 'Continue',
-                              icon: _currentPage == _pages.length - 1 ? Icons.school_rounded : Icons.arrow_forward_rounded,
-                            ),
+                          ),
+                          SizedBox(height: isSmall ? 24 : 40),
+                          // Action Buttons Bento
+                          Row(
+                            children: [
+                              if (_currentPage > 0)
+                                Expanded(
+                                  flex: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(right: 12.0),
+                                    child: _buildGlassButton(
+                                      onPressed: () {
+                                        HapticFeedback.lightImpact();
+                                        _pageController.previousPage(
+                                          duration: const Duration(milliseconds: 600),
+                                          curve: Curves.easeOutQuart,
+                                        );
+                                      },
+                                      icon: Icons.arrow_back_rounded,
+                                      isSecondary: true,
+                                      scale: dynamicScale,
+                                    ),
+                                  ),
+                                ),
+                              Expanded(
+                                flex: 3,
+                                child: _buildGlassButton(
+                                  onPressed: () async {
+                                    HapticFeedback.mediumImpact();
+                                    if (_currentPage < _pages.length - 1) {
+                                      _pageController.nextPage(
+                                        duration: const Duration(milliseconds: 600),
+                                        curve: Curves.easeOutQuart,
+                                      );
+                                    } else {
+                                      final onboardingCubit = context.read<OnboardingCubit>();
+                                      await onboardingCubit.completeOnboarding();
+                                      if (!context.mounted) return;
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                      );
+                                    }
+                                  },
+                                  label: _currentPage == _pages.length - 1 ? 'Start Learning' : 'Continue',
+                                  icon: _currentPage == _pages.length - 1 ? Icons.school_rounded : Icons.arrow_forward_rounded,
+                                  scale: dynamicScale,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ],
       ),
@@ -289,10 +307,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
     String? label,
     IconData? icon,
     bool isSecondary = false,
+    double scale = 1.0,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 64,
+      height: 64 * scale.clamp(0.85, 1.0),
       decoration: BoxDecoration(
         color: isSecondary
             ? Colors.transparent
@@ -346,7 +365,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> with TickerProvider
 
 class GlassCard extends StatelessWidget {
   final Widget child;
-  const GlassCard({super.key, required this.child});
+  final EdgeInsetsGeometry padding;
+  const GlassCard({super.key, required this.child, required this.padding});
 
   @override
   Widget build(BuildContext context) {
@@ -356,7 +376,7 @@ class GlassCard extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: padding,
           decoration: BoxDecoration(
             color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(ClassTrackTheme.bentoRadius),
