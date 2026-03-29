@@ -10,6 +10,13 @@ class ClassTrackTheme {
   static const Color subtleGray = Color(0xFFF1F5F9);
   static const Color errorRed = Color(0xFFEF4444);
   static const Color successGreen = Color(0xFF10B981);
+  static const Color glassBackground = Color(0x33FFFFFF);
+  static const Color glassBorder = Color(0x4DFFFFFF);
+
+  // Bento & Glass Constants
+  static const double glassBlur = 12.0;
+  static const double bentoRadius = 32.0;
+  static const double bentoPadding = 24.0;
 
   static ThemeData get lightTheme {
     return ThemeData(
