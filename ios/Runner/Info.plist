@@ -51,7 +51,10 @@
 		<false/>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>ClassTrack requires location access for geofencing attendance.</string>
-		<key>NSFaceIDUsageDescription</key>
 		<string>ClassTrack requires Face ID for secure biometric login.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>ClassTrack needs gallery access to let you update your profile picture.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>ClassTrack needs camera access to let you take a direct profile picture.</string>
 	</dict>
 </plist>
