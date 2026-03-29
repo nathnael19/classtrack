@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 import 'package:classtrack/widgets/glass_widgets.dart';
+import 'package:classtrack/utils/form_validators.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -21,6 +22,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   final _emailController = TextEditingController();
   final _sectionController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  
   List<dynamic> _departments = [];
   int? _selectedDepartmentId;
   bool _isLoadingDepts = true;
@@ -84,35 +87,19 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   }
 
   void _handleRegister() {
-    final name = _nameController.text.trim();
-    final studentId = _idController.text.trim();
-    final email = _emailController.text.trim();
-    final section = _sectionController.text.trim();
-    final password = _passwordController.text;
-
-    if (name.isEmpty ||
-        studentId.isEmpty ||
-        email.isEmpty ||
-        section.isEmpty ||
-        password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill in all fields'),
-          behavior: SnackBarBehavior.floating,
-        ),
+    if (_formKey.currentState!.validate()) {
+      HapticFeedback.mediumImpact();
+      context.read<AuthCubit>().register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        studentId: _idController.text.trim(),
+        section: _sectionController.text.trim(),
+        departmentId: _selectedDepartmentId,
       );
-      return;
+    } else {
+      HapticFeedback.heavyImpact();
     }
-
-    HapticFeedback.mediumImpact();
-    context.read<AuthCubit>().register(
-      name: name,
-      email: email,
-      password: password,
-      studentId: studentId,
-      section: section,
-      departmentId: _selectedDepartmentId,
-    );
   }
 
   @override
@@ -181,216 +168,231 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                           child: SingleChildScrollView(
                             physics: const BouncingScrollPhysics(),
                             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                SizedBox(height: 16 * dynamicScale),
-                                // Header
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: SlideTransition(
-                                    position: _slideAnimation,
-                                    child: Column(
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  SizedBox(height: 16 * dynamicScale),
+                                  // Header
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: SlideTransition(
+                                      position: _slideAnimation,
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            child: const Icon(
+                                              Icons.qr_code_scanner_rounded,
+                                              size: 32,
+                                              color: ClassTrackTheme.primaryBlue,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Join Class Track',
+                                            style: theme.textTheme.displaySmall?.copyWith(
+                                              fontSize: 24 * dynamicScale,
+                                              fontWeight: FontWeight.w900,
+                                              color: isDark ? Colors.white : const Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Start your smart attendance journey',
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 32 * dynamicScale),
+
+                                  // Personal Section
+                                  _buildSectionTitle('Personal Information', isDark, theme),
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: SlideTransition(
+                                      position: _slideAnimation,
+                                      child: GlassCard(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          children: [
+                                            GlassTextField(
+                                              controller: _nameController,
+                                              hintText: 'Full Name',
+                                              prefixIcon: Icons.person_outline_rounded,
+                                              scale: dynamicScale,
+                                              validator: (val) => FormValidators.validateRequired(val, 'Full Name'),
+                                              textInputAction: TextInputAction.next,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            GlassTextField(
+                                              controller: _idController,
+                                              hintText: 'University ID (e.g. 202401)',
+                                              prefixIcon: Icons.badge_outlined,
+                                              scale: dynamicScale,
+                                              validator: FormValidators.validateStudentId,
+                                              textInputAction: TextInputAction.next,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Academic Section
+                                  _buildSectionTitle('Academic Details', isDark, theme),
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: SlideTransition(
+                                      position: _slideAnimation,
+                                      child: GlassCard(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          children: [
+                                            _isLoadingDepts
+                                                ? const Center(child: CircularProgressIndicator())
+                                                : GlassDropdown<int>(
+                                                    value: _selectedDepartmentId,
+                                                    hintText: 'Select Department',
+                                                    prefixIcon: Icons.account_balance_outlined,
+                                                    items: _departments.map((dept) {
+                                                      return DropdownMenuItem<int>(
+                                                        value: dept['id'],
+                                                        child: Text(dept['name']),
+                                                      );
+                                                    }).toList(),
+                                                    onChanged: (val) => setState(() => _selectedDepartmentId = val),
+                                                    scale: dynamicScale,
+                                                    validator: (val) => val == null ? 'Please select a department' : null,
+                                                  ),
+                                            const SizedBox(height: 16),
+                                            GlassTextField(
+                                              controller: _sectionController,
+                                              hintText: 'Section (e.g. A1)',
+                                              prefixIcon: Icons.groups_outlined,
+                                              scale: dynamicScale,
+                                              validator: FormValidators.validateSection,
+                                              textInputAction: TextInputAction.next,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Account Section
+                                  _buildSectionTitle('Account Setup', isDark, theme),
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: SlideTransition(
+                                      position: _slideAnimation,
+                                      child: GlassCard(
+                                        padding: const EdgeInsets.all(20),
+                                        child: Column(
+                                          children: [
+                                            GlassTextField(
+                                              controller: _emailController,
+                                              hintText: 'University Email',
+                                              prefixIcon: Icons.email_outlined,
+                                              keyboardType: TextInputType.emailAddress,
+                                              scale: dynamicScale,
+                                              validator: FormValidators.validateEmail,
+                                              textInputAction: TextInputAction.next,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            GlassTextField(
+                                              controller: _passwordController,
+                                              hintText: 'Password',
+                                              prefixIcon: Icons.lock_outline_rounded,
+                                              obscureText: !_isPasswordVisible,
+                                              suffixIcon: _isPasswordVisible
+                                                  ? Icons.visibility_outlined
+                                                  : Icons.visibility_off_outlined,
+                                              onSuffixIconPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
+                                              scale: dynamicScale,
+                                              validator: FormValidators.validatePassword,
+                                              textInputAction: TextInputAction.done,
+                                              onSubmitted: (_) => _handleRegister(),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
+
+                                  // Terms
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                      child: Text(
+                                        'By registering, you agree to our Terms of Service and Privacy Policy.',
+                                        textAlign: TextAlign.center,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+
+                                  // Register Button
+                                  BlocBuilder<AuthCubit, AuthState>(
+                                    builder: (context, state) {
+                                      return GlassButton(
+                                        onPressed: _handleRegister,
+                                        label: 'Create Account',
+                                        isLoading: state.status == AuthStatus.loading,
+                                        scale: dynamicScale,
+                                        width: double.infinity,
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 32),
+
+                                  // Footer
+                                  FadeTransition(
+                                    opacity: _fadeAnimation,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: ClassTrackTheme.primaryBlue.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(16),
-                                          ),
-                                          child: const Icon(
-                                            Icons.qr_code_scanner_rounded,
-                                            size: 32,
-                                            color: ClassTrackTheme.primaryBlue,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
                                         Text(
-                                          'Join Class Track',
-                                          style: theme.textTheme.displaySmall?.copyWith(
-                                            fontSize: 24 * dynamicScale,
-                                            fontWeight: FontWeight.w900,
-                                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Start your smart attendance journey',
+                                          "Already have an account? ",
                                           style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: isDark ? Colors.white70 : const Color(0xFF64748B),
+                                            color: isDark ? Colors.white60 : const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            'Login',
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: ClassTrackTheme.primaryBlue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: 32 * dynamicScale),
-
-                                // Personal Section
-                                _buildSectionTitle('Personal Information', isDark, theme),
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: SlideTransition(
-                                    position: _slideAnimation,
-                                    child: GlassCard(
-                                      padding: const EdgeInsets.all(20),
-                                      child: Column(
-                                        children: [
-                                          GlassTextField(
-                                            controller: _nameController,
-                                            hintText: 'Full Name',
-                                            prefixIcon: Icons.person_outline_rounded,
-                                            scale: dynamicScale,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          GlassTextField(
-                                            controller: _idController,
-                                            hintText: 'University ID (e.g. 202401)',
-                                            prefixIcon: Icons.badge_outlined,
-                                            scale: dynamicScale,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Academic Section
-                                _buildSectionTitle('Academic Details', isDark, theme),
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: SlideTransition(
-                                    position: _slideAnimation,
-                                    child: GlassCard(
-                                      padding: const EdgeInsets.all(20),
-                                      child: Column(
-                                        children: [
-                                          _isLoadingDepts
-                                              ? const Center(child: CircularProgressIndicator())
-                                              : GlassDropdown<int>(
-                                                  value: _selectedDepartmentId,
-                                                  hintText: 'Select Department',
-                                                  prefixIcon: Icons.account_balance_outlined,
-                                                  items: _departments.map((dept) {
-                                                    return DropdownMenuItem<int>(
-                                                      value: dept['id'],
-                                                      child: Text(dept['name']),
-                                                    );
-                                                  }).toList(),
-                                                  onChanged: (val) => setState(() => _selectedDepartmentId = val),
-                                                  scale: dynamicScale,
-                                                ),
-                                          const SizedBox(height: 16),
-                                          GlassTextField(
-                                            controller: _sectionController,
-                                            hintText: 'Section (e.g. A1)',
-                                            prefixIcon: Icons.groups_outlined,
-                                            scale: dynamicScale,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Account Section
-                                _buildSectionTitle('Account Setup', isDark, theme),
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: SlideTransition(
-                                    position: _slideAnimation,
-                                    child: GlassCard(
-                                      padding: const EdgeInsets.all(20),
-                                      child: Column(
-                                        children: [
-                                          GlassTextField(
-                                            controller: _emailController,
-                                            hintText: 'University Email',
-                                            prefixIcon: Icons.email_outlined,
-                                            keyboardType: TextInputType.emailAddress,
-                                            scale: dynamicScale,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          GlassTextField(
-                                            controller: _passwordController,
-                                            hintText: 'Password',
-                                            prefixIcon: Icons.lock_outline_rounded,
-                                            obscureText: !_isPasswordVisible,
-                                            suffixIcon: _isPasswordVisible
-                                                ? Icons.visibility_outlined
-                                                : Icons.visibility_off_outlined,
-                                            onSuffixIconPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
-                                            scale: dynamicScale,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 32),
-
-                                // Terms
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                                    child: Text(
-                                      'By registering, you agree to our Terms of Service and Privacy Policy.',
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Register Button
-                                BlocBuilder<AuthCubit, AuthState>(
-                                  builder: (context, state) {
-                                    return GlassButton(
-                                      onPressed: _handleRegister,
-                                      label: 'Create Account',
-                                      isLoading: state.status == AuthStatus.loading,
-                                      scale: dynamicScale,
-                                      width: double.infinity,
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 32),
-
-                                // Footer
-                                FadeTransition(
-                                  opacity: _fadeAnimation,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        "Already have an account? ",
-                                        style: theme.textTheme.bodyMedium?.copyWith(
-                                          color: isDark ? Colors.white60 : const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () {
-                                          HapticFeedback.lightImpact();
-                                          Navigator.pop(context);
-                                        },
-                                        child: Text(
-                                          'Login',
-                                          style: theme.textTheme.bodyMedium?.copyWith(
-                                            color: ClassTrackTheme.primaryBlue,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 48),
-                              ],
+                                  const SizedBox(height: 48),
+                                ],
+                              ),
                             ),
                           ),
                         ),
