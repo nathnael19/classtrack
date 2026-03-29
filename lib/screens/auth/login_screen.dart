@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:classtrack/logic/cubits/auth/auth_cubit.dart';
 import 'package:classtrack/screens/student/student_dashboard_screen.dart';
 import 'package:classtrack/widgets/glass_widgets.dart';
+import 'package:classtrack/screens/auth/forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -178,7 +179,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: TextButton(
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          HapticFeedback.lightImpact();
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const ForgotPasswordScreen(),
+                                            ),
+                                          );
+                                        },
                                         child: Text(
                                           'Forgot Password?',
                                           style: theme.textTheme.labelMedium?.copyWith(
